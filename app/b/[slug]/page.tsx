@@ -14,12 +14,45 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!business) {
     return {
       title: "Business Not Found | Widox Review Assistant",
+      description: "The requested business review page could not be found.",
     };
   }
 
+  const title = `Review ${business.name} on Google | Powered by Widox`;
+  const description =
+    business.tagline ||
+    `Leave genuine feedback for ${business.name}. AI organizes your thoughts into a polished Google review in 30 seconds.`;
+
   return {
-    title: `${business.name} | Google Review Assistant`,
-    description: `Leave genuine feedback for ${business.name}. AI organizes your thoughts into a polished Google review in 30 seconds.`,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      siteName: "Widox Review Assistant",
+      ...(business.logoUrl
+        ? {
+            images: [
+              {
+                url: business.logoUrl,
+                alt: `${business.name} Logo`,
+              },
+            ],
+          }
+        : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      creator: "@widox",
+      ...(business.logoUrl
+        ? {
+            images: [business.logoUrl],
+          }
+        : {}),
+    },
   };
 }
 
