@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 31, 20, 18;
+  --background-start-rgb: 253, 251, 247;
+  --background-end-rgb: 247, 241, 231;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: #fbf8f3;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar for cafe aesthetic */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f4e9de;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d09871;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #b66742;
+}
+
+::selection {
+  background: #d97706;
+  color: #ffffff;
+}

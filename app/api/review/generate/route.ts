@@ -1,0 +1,80 @@
+import { NextResponse } from "next/server";
+import { config } from "@/lib/config";
+import { ReviewGenerateInputSchema, sanitizeText } from "@/lib/validation";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
+import { generateCustomerReviewDrafts } from "@/lib/openai";
+
+export async function POST(req: Request) {
+  try {
+    // 1. Rate limiting check
+    const clientIp = getClientIp(req);
+    const rateLimit = checkRateLimit(
+      `review-gen:${clientIp}`,
+      config.rateLimits.reviewGenerate.max,
+      config.rateLimits.reviewGenerate.windowMs
+    );
+
+    const headers = new Headers();
+    headers.set("X-RateLimit-Limit", rateLimit.limit.toString());
+    headers.set("X-RateLimit-Remaining", rateLimit.remaining.toString());
+    headers.set("X-RateLimit-Reset", rateLimit.reset.toString());
+
+    if (!rateLimit.success) {
+      return NextResponse.json(
+        {
+          error: "Too many requests. Please wait a moment before generating more reviews.",
+          retryAfter: rateLimit.reset,
+        },
+        { status: 429, headers }
+      );
+    }
+
+    // 2. Parse & validate request body
+    let body;
+    try {
+      body = await req.json();
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400, headers }
+      );
+    }
+
+    const parseResult = ReviewGenerateInputSchema.safeParse(body);
+    if (!parseResult.success) {
+      const firstError = parseResult.error.errors[0]?.message || "Validation failed";
+      return NextResponse.json(
+        { error: firstError },
+        { status: 422, headers }
+      );
+    }
+
+    const { rating, customerText } = parseResult.data;
+    const cleanText = sanitizeText(customerText);
+
+    if (cleanText.length < 3) {
+      return NextResponse.json(
+        { error: "Please enter at least 3 characters of genuine feedback." },
+        { status: 422, headers }
+      );
+    }
+
+    // 3. Generate review drafts
+    const drafts = await generateCustomerReviewDrafts(rating, cleanText);
+
+    return NextResponse.json(
+      {
+        success: true,
+        rating,
+        drafts,
+      },
+      { status: 200, headers }
+    );
+  } catch (error) {
+    console.error("Error in review generation route:", error);
+    return NextResponse.json(
+      { error: "Failed to generate review suggestions. Please try again." },
+      { status: 500 }
+    );
+  }
+}
