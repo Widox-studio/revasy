@@ -101,7 +101,30 @@ const DEFAULT_BUSINESSES: Business[] = [
 
 let inMemoryBusinesses: Business[] = [...DEFAULT_BUSINESSES];
 
+function isFsAvailable(): boolean {
+  try {
+    return (
+      typeof process !== "undefined" &&
+      process.env.NEXT_RUNTIME !== "edge" &&
+      typeof fs !== "undefined" &&
+      typeof fs.existsSync === "function"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getKvBinding(): any {
+  try {
+    const env = (process.env as any) || {};
+    return env.BUSINESSES_KV || env.KV || (globalThis as any).BUSINESSES_KV || null;
+  } catch {
+    return null;
+  }
+}
+
 function ensureDataFile() {
+  if (!isFsAvailable()) return;
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -115,6 +138,9 @@ function ensureDataFile() {
 }
 
 export function getAllBusinesses(): Business[] {
+  if (!isFsAvailable()) {
+    return inMemoryBusinesses;
+  }
   ensureDataFile();
   try {
     if (fs.existsSync(DATA_FILE)) {
@@ -155,11 +181,26 @@ export function saveBusiness(business: Business): Business {
   }
 
   inMemoryBusinesses = all;
-  try {
-    ensureDataFile();
-    fs.writeFileSync(DATA_FILE, JSON.stringify(all, null, 2), "utf-8");
-  } catch (err) {
-    console.error("Failed saving business to file:", err);
+
+  // Cloudflare KV persistence if deployed to Cloudflare Workers
+  const kv = getKvBinding();
+  if (kv && typeof kv.put === "function") {
+    try {
+      kv.put("businesses", JSON.stringify(all));
+      kv.put(`biz_${business.slug}`, JSON.stringify(business));
+    } catch (kvErr) {
+      console.warn("Failed saving to Cloudflare KV:", kvErr);
+    }
+  }
+
+  // Local filesystem persistence if running in Node.js
+  if (isFsAvailable()) {
+    try {
+      ensureDataFile();
+      fs.writeFileSync(DATA_FILE, JSON.stringify(all, null, 2), "utf-8");
+    } catch (err) {
+      console.error("Failed saving business to file:", err);
+    }
   }
 
   return business;

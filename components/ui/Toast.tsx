@@ -16,7 +16,7 @@ export const Toast: React.FC<ToastProps> = ({
   type = "success",
   isOpen,
   onClose,
-  duration = 3000,
+  duration = 3200,
 }) => {
   useEffect(() => {
     if (isOpen && duration > 0) {
@@ -30,27 +30,41 @@ export const Toast: React.FC<ToastProps> = ({
   if (!isOpen) return null;
 
   const bgStyles = {
-    success: "bg-espresso text-cream border-amber-600/30",
-    error: "bg-red-900 text-white border-red-700",
-    info: "bg-stone-800 text-cream border-stone-700",
+    success: "bg-ink text-on-primary border-hairline/20 shadow-floating",
+    error: "bg-red-950 text-white border-red-700/50 shadow-floating",
+    info: "bg-surface-card text-ink border-hairline shadow-floating",
   };
 
   const icons = {
-    success: <CheckCircle2 className="w-5 h-5 text-amber-400 shrink-0" />,
-    error: <AlertCircle className="w-5 h-5 text-red-300 shrink-0" />,
-    info: <CheckCircle2 className="w-5 h-5 text-cafe-300 shrink-0" />,
+    success: (
+      <div className="w-6 h-6 rounded-full bg-brand-pink/20 flex items-center justify-center shrink-0">
+        <CheckCircle2 className="w-4 h-4 text-brand-pink" />
+      </div>
+    ),
+    error: (
+      <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center shrink-0">
+        <AlertCircle className="w-4 h-4 text-red-300" />
+      </div>
+    ),
+    info: (
+      <div className="w-6 h-6 rounded-full bg-brand-teal/20 flex items-center justify-center shrink-0">
+        <CheckCircle2 className="w-4 h-4 text-brand-teal" />
+      </div>
+    ),
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-fadeIn px-4 max-w-sm w-full">
+    <div className="fixed bottom-6 inset-x-0 z-50 flex justify-center px-4 pointer-events-none">
       <div
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-floating border backdrop-blur-md ${bgStyles[type]}`}
+        className={`pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-2xl border backdrop-blur-md max-w-sm w-full animate-slideUp transition-all ${bgStyles[type]}`}
+        role="status"
+        aria-live="polite"
       >
         {icons[type]}
-        <p className="text-sm font-medium flex-1">{message}</p>
+        <p className="text-xs sm:text-sm font-medium flex-1 leading-snug">{message}</p>
         <button
           onClick={onClose}
-          className="text-stone-400 hover:text-white transition-colors p-1"
+          className="text-muted-soft hover:text-white transition-colors p-1.5 rounded-lg -mr-1"
           aria-label="Close notification"
         >
           <X className="w-4 h-4" />
@@ -59,3 +73,4 @@ export const Toast: React.FC<ToastProps> = ({
     </div>
   );
 };
+

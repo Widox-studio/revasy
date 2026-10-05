@@ -1,17 +1,18 @@
 import type { Metadata, Viewport } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import "./globals.css";
-import { config } from "@/lib/config";
 
 export const metadata: Metadata = {
-  title: `${config.cafe.name} | Google Review Assistant`,
-  description: `${config.cafe.name} - Turn your genuine dining experience into a polished Google review in seconds.`,
+  title: "Widox Review Assistant | AI Google Reviews & NFC Stands",
+  description:
+    "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by Widox.",
   icons: {
     icon: "/favicon.ico",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1f1412",
+  themeColor: "#fffaf0",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
@@ -24,8 +25,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="bg-crema font-sans antialiased text-espresso min-h-screen flex flex-col">
-        {children}
+      <body className="bg-canvas font-sans antialiased text-ink min-h-screen flex flex-col">
+        <ClerkProvider>
+          {children}
+        </ClerkProvider>
       </body>
     </html>
   );

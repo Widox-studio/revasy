@@ -52,3 +52,39 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: #b5b0a2;
 }
+
+/* Skeleton shimmer utility */
+.shimmer-box {
+  background: linear-gradient(90deg, #ede7d6 0%, #f7f3e8 50%, #ede7d6 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s infinite linear;
+}
+
+/* Safe bottom area on modern mobile devices (Fitts's Law) */
+.pb-safe {
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+/* Focus visibility for accessibility (Jakob's Law) */
+:focus-visible {
+  outline: 2px solid #1a3a3a;
+  outline-offset: 2px;
+}
+
+/* Print styles for Table Tent Card preview */
+@media print {
+  header, footer, nav, button, .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .printable-stand {
+    border: 2px solid #000 !important;
+    box-shadow: none !important;
+    margin: 20mm auto !important;
+    max-width: 90mm !important;
+    page-break-inside: avoid;
+  }
+}

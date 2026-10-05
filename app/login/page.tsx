@@ -10,14 +10,20 @@ import {
   AlertCircle,
   Building2,
   Sparkles,
+  Eye,
+  EyeOff,
+  ShieldCheck,
 } from "lucide-react";
+import { useClerk } from "@clerk/nextjs";
 import { Button } from "@/components/ui/Button";
 
 export default function LoginPage() {
   const router = useRouter();
+  const clerk = useClerk();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -98,13 +104,13 @@ export default function LoginPage() {
 
         {/* Login Card */}
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-hairline shadow-card space-y-5">
-          {/* OAuth / Google Button */}
+          {/* Clerk Universal Sign In Button */}
           <button
             type="button"
-            onClick={() => handleQuickDemoLogin("owner@cocovacafe.com")}
-            className="w-full py-3 px-4 rounded-xl border border-hairline bg-surface-card hover:bg-surface-strong text-ink text-xs font-semibold flex items-center justify-center gap-2.5 transition-colors"
+            onClick={() => clerk?.openSignIn ? clerk.openSignIn() : router.push("/login")}
+            className="press w-full py-3 px-4 rounded-xl bg-primary text-on-primary hover:bg-[#1a1a1a] text-xs font-semibold flex items-center justify-center gap-2 shadow-sm transition-all"
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
+            <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -128,14 +134,14 @@ export default function LoginPage() {
           <div className="relative flex items-center justify-center">
             <div className="border-t border-hairline w-full" />
             <span className="bg-white px-3 text-[11px] uppercase tracking-wider text-muted-soft absolute">
-              or email
+              or demo credentials
             </span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label htmlFor="login-email" className="block text-xs font-semibold uppercase tracking-wider text-muted">
-                Email
+                Email Address
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
@@ -163,13 +169,21 @@ export default function LoginPage() {
                 </div>
                 <input
                   id="login-pass"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full text-sm text-ink pl-10 pr-3.5 py-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
+                  className="w-full text-sm text-ink pl-10 pr-10 py-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted hover:text-ink transition-colors"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
 
@@ -194,23 +208,27 @@ export default function LoginPage() {
 
           {/* Quick Demo Access Bar */}
           <div className="bg-surface-soft p-3.5 rounded-2xl border border-hairline space-y-2 text-xs">
-            <span className="font-semibold text-ink block">Instant Demo Access:</span>
+            <span className="font-semibold text-ink block">Instant One-Click Demo Access:</span>
             <div className="flex flex-col gap-1.5">
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin("owner@cocovacafe.com")}
-                className="text-left py-1.5 px-2 rounded-lg hover:bg-surface-card text-xs text-brand-teal font-medium flex items-center justify-between"
+                className="press text-left py-2 px-2.5 rounded-xl hover:bg-surface-card text-xs text-brand-teal font-medium flex items-center justify-between border border-transparent hover:border-hairline transition-all"
               >
                 <span>☕ Cocova Cafe Owner</span>
-                <span className="text-[10px] text-muted-soft">One-click</span>
+                <span className="text-[10px] font-semibold text-brand-pink bg-brand-pink/10 px-2 py-0.5 rounded-pill">
+                  Auto-fill &amp; Login
+                </span>
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin("admin@widox.in")}
-                className="text-left py-1.5 px-2 rounded-lg hover:bg-surface-card text-xs text-brand-pink font-medium flex items-center justify-between"
+                className="press text-left py-2 px-2.5 rounded-xl hover:bg-surface-card text-xs text-brand-pink font-medium flex items-center justify-between border border-transparent hover:border-hairline transition-all"
               >
                 <span>🏢 Widox Studio Admin</span>
-                <span className="text-[10px] text-muted-soft">One-click</span>
+                <span className="text-[10px] font-semibold text-brand-teal bg-brand-teal/10 px-2 py-0.5 rounded-pill">
+                  Auto-fill &amp; Login
+                </span>
               </button>
             </div>
           </div>

@@ -1,84 +1,45 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { jwtVerify } from "jose";
-import { config } from "./lib/config";
+import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { securityHeaders } from "./lib/security";
 
-const secretKey = new TextEncoder().encode(config.admin.sessionSecret);
+const isPublicRoute = createRouteMatcher([
+  "/",
+  "/b/(.*)",
+  "/review",
+  "/login(.*)",
+  "/sign-in(.*)",
+  "/sign-up(.*)",
+  "/api/review(.*)",
+  "/api/businesses(.*)",
+  "/api/upload(.*)",
+  "/api/admin/login",
+  "/api/admin/logout",
+  "/api/admin/reply/generate",
+]);
 
-export async function middleware(request: NextRequest) {
+export default clerkMiddleware((auth, request) => {
   const { pathname } = request.nextUrl;
   const response = NextResponse.next();
+  Object.entries(securityHeaders).forEach(([k, v]) => response.headers.set(k, v));
 
-  // Apply production security headers to all responses
-  Object.entries(securityHeaders).forEach(([key, value]) => {
-    response.headers.set(key, value);
-  });
+  // Legacy convenience redirects
+  if (pathname === "/admin") return NextResponse.redirect(new URL("/dashboard", request.url));
+  if (pathname === "/admin/login") return NextResponse.redirect(new URL("/login", request.url));
+  if (pathname === "/review") return NextResponse.redirect(new URL("/b/cocova", request.url));
 
-  // Legacy redirects
-  if (pathname === "/admin") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
-  }
-  if (pathname === "/admin/login") {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
-  if (pathname === "/review") {
-    return NextResponse.redirect(new URL("/b/cocova", request.url));
-  }
-
-  // Guard protected SaaS dashboard routes: /dashboard, /dashboard/...
-  const isDashboardPage = pathname.startsWith("/dashboard");
-  const isProtectedApi = pathname.startsWith("/api/admin/reply");
-
-  if (isDashboardPage || isProtectedApi) {
-    const sessionCookie = request.cookies.get(config.admin.cookieName);
-
-    let isAuthenticated = false;
-    if (sessionCookie?.value) {
-      try {
-        const { payload } = await jwtVerify(sessionCookie.value, secretKey);
-        if (payload.role === "admin") {
-          isAuthenticated = true;
-        }
-      } catch {
-        isAuthenticated = false;
-      }
-    }
-
-    if (!isAuthenticated) {
-      if (isProtectedApi) {
-        return NextResponse.json(
-          { error: "Unauthorized. Please log in." },
-          { status: 401, headers: response.headers }
-        );
-      }
-
-      const loginUrl = new URL("/login", request.url);
-      loginUrl.searchParams.set("redirect", pathname);
-      return NextResponse.redirect(loginUrl);
-    }
-  }
-
-  // If already logged in and visiting /login, redirect to /dashboard
-  if (pathname === "/login") {
-    const sessionCookie = request.cookies.get(config.admin.cookieName);
-    if (sessionCookie?.value) {
-      try {
-        const { payload } = await jwtVerify(sessionCookie.value, secretKey);
-        if (payload.role === "admin") {
-          return NextResponse.redirect(new URL("/dashboard", request.url));
-        }
-      } catch {
-        // Continue to login
-      }
-    }
+  if (!isPublicRoute(request)) {
+    auth().protect();
   }
 
   return response;
-}
+});
 
-export const configMiddleware = {
+export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|uploads/).*)",
+    // Skip Next.js internals and all static files, unless found in search params
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    // Always run for API routes
+    "/(api|trpc)(.*)",
+    "/__clerk/:path*",
   ],
 };

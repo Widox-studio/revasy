@@ -19,9 +19,13 @@ import {
   ShieldCheck,
   Building2,
   CheckCircle,
+  Eye,
+  Sliders,
+  Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Toast } from "@/components/ui/Toast";
+import { UserButton } from "@clerk/nextjs";
 import { Business } from "@/lib/business-store";
 import { generateQrDataUrl } from "@/lib/qr";
 
@@ -37,6 +41,10 @@ export default function BusinessDetailPage() {
   // QR Code data URL
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>("");
   const [publicUrl, setPublicUrl] = useState<string>("");
+
+  // Stand Theme Simulator
+  const [standBackdrop, setStandBackdrop] = useState<"wood" | "marble" | "canvas">("canvas");
+  const [standFormat, setStandFormat] = useState<"tent" | "acrylic">("tent");
 
   // AI Reply Generator State
   const [replyRating, setReplyRating] = useState<number>(5);
@@ -97,8 +105,8 @@ export default function BusinessDetailPage() {
     load();
   }, [slug, router]);
 
-  const handleGenerateReplies = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGenerateReplies = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (customerReview.trim().length < 5) {
       showToast("Please enter at least 5 characters of review text.");
       return;
@@ -159,7 +167,7 @@ export default function BusinessDetailPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to save");
       setBusiness(data.business);
-      showToast("Business settings updated successfully!");
+      showToast("Business profile updated successfully!");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Save failed";
       showToast(msg);
@@ -174,7 +182,7 @@ export default function BusinessDetailPage() {
     a.href = qrCodeDataUrl;
     a.download = `${slug}-google-review-qr.png`;
     a.click();
-    showToast("Downloaded QR Code image!");
+    showToast("Downloaded high-res QR code image!");
   };
 
   if (isLoading || !business) {
@@ -182,7 +190,7 @@ export default function BusinessDetailPage() {
       <div className="min-h-screen bg-canvas flex items-center justify-center">
         <div className="text-center space-y-3">
           <div className="w-8 h-8 border-4 border-hairline border-t-primary rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-muted">Loading business hub...</p>
+          <p className="text-sm text-muted">Loading business workspace...</p>
         </div>
       </div>
     );
@@ -191,10 +199,14 @@ export default function BusinessDetailPage() {
   return (
     <div className="min-h-screen bg-canvas text-ink flex flex-col pb-16">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-30 bg-canvas/90 backdrop-blur-md border-b border-hairline px-4 md:px-8 py-3.5">
+      <header className="sticky top-0 z-30 bg-canvas/90 backdrop-blur-md border-b border-hairline px-4 md:px-8 py-3.5 no-print">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/dashboard" className="text-muted hover:text-ink transition-colors p-1">
+            <Link
+              href="/dashboard"
+              className="text-muted hover:text-ink transition-colors p-1.5 rounded-lg hover:bg-surface-card"
+              title="Return to dashboard"
+            >
               <ArrowLeft className="w-4 h-4" />
             </Link>
             <span className="font-display font-semibold text-lg text-ink truncate max-w-[200px] sm:max-w-none">
@@ -210,18 +222,20 @@ export default function BusinessDetailPage() {
               href={`/b/${business.slug}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-surface-strong border border-hairline rounded-md text-xs font-semibold text-ink transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-card hover:bg-surface-strong border border-hairline rounded-lg text-xs font-semibold text-ink transition-colors"
             >
-              <span>Guest Flow</span>
-              <ExternalLink className="w-3 h-3 text-muted" />
+              <span>Guest Review Flow</span>
+              <ExternalLink className="w-3.5 h-3.5 text-muted" />
             </a>
 
             <Link
               href="/dashboard"
-              className="text-xs text-muted hover:text-ink font-medium px-2.5 py-1.5 rounded-md hover:bg-surface-soft transition-colors"
+              className="text-xs text-muted hover:text-ink font-medium px-2.5 py-1.5 rounded-lg hover:bg-surface-soft transition-colors"
             >
               All Businesses
             </Link>
+
+            <UserButton afterSignOutUrl="/" />
           </div>
         </div>
       </header>
@@ -229,7 +243,7 @@ export default function BusinessDetailPage() {
       {/* Main Container */}
       <main className="max-w-6xl w-full mx-auto px-4 md:px-8 pt-6 space-y-6 flex-1">
         {/* Business Summary Card */}
-        <div className="bg-surface-card rounded-3xl p-6 border border-hairline shadow-subtle flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="bg-surface-card rounded-3xl p-6 border border-hairline shadow-subtle flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 no-print">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-white border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
               {business.logoUrl ? (
@@ -238,7 +252,7 @@ export default function BusinessDetailPage() {
                 <Building2 className="w-7 h-7 text-muted" />
               )}
             </div>
-            <div>
+            <div className="space-y-0.5">
               <h1 className="font-display font-semibold text-2xl text-ink">
                 {business.name}
               </h1>
@@ -248,7 +262,7 @@ export default function BusinessDetailPage() {
                   href={publicUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand-pink font-semibold underline underline-offset-2"
+                  className="text-brand-pink font-semibold underline underline-offset-2 break-all"
                 >
                   {publicUrl}
                 </a>
@@ -256,25 +270,25 @@ export default function BusinessDetailPage() {
             </div>
           </div>
 
-          {/* Stats pills */}
-          <div className="flex items-center gap-3">
-            <div className="bg-white px-3.5 py-2 rounded-xl border border-hairline text-center">
+          {/* Stats pills (Miller's Law chunking) */}
+          <div className="flex items-center gap-2.5">
+            <div className="bg-white px-3.5 py-2 rounded-xl border border-hairline text-center min-w-[85px]">
               <span className="block font-display font-semibold text-base text-ink">
                 {business.stats?.totalReviewsGenerated || 0}
               </span>
-              <span className="text-[10px] text-muted uppercase">Reviews AI</span>
+              <span className="text-[10px] text-muted uppercase font-medium">Reviews AI</span>
             </div>
-            <div className="bg-white px-3.5 py-2 rounded-xl border border-hairline text-center">
+            <div className="bg-white px-3.5 py-2 rounded-xl border border-hairline text-center min-w-[85px]">
               <span className="block font-display font-semibold text-base text-ink">
                 {business.stats?.totalRepliesGenerated || 0}
               </span>
-              <span className="text-[10px] text-muted uppercase">Replies AI</span>
+              <span className="text-[10px] text-muted uppercase font-medium">Replies AI</span>
             </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <div className="flex border-b border-hairline gap-2 overflow-x-auto">
+        {/* Tab Navigation with Clear Active State */}
+        <div className="flex border-b border-hairline gap-2 overflow-x-auto no-print">
           <button
             onClick={() => setActiveTab("replies")}
             className={`flex items-center gap-2 px-4 py-3 text-sm font-semibold border-b-2 transition-all whitespace-nowrap ${
@@ -296,7 +310,7 @@ export default function BusinessDetailPage() {
             }`}
           >
             <QrCode className="w-4 h-4 text-brand-teal" />
-            <span>QR &amp; NFC Stand Kit</span>
+            <span>NFC &amp; QR Stand Kit</span>
           </button>
 
           <button
@@ -308,7 +322,7 @@ export default function BusinessDetailPage() {
             }`}
           >
             <Settings className="w-4 h-4 text-brand-ochre" />
-            <span>Business Settings</span>
+            <span>Business Profile</span>
           </button>
         </div>
 
@@ -324,12 +338,12 @@ export default function BusinessDetailPage() {
                   AI Google Review Reply Generator for {business.name}
                 </h3>
                 <p className="text-xs text-muted">
-                  Paste any Google Maps review below. AI generates 3 tailored, professional replies acknowledging your specific offerings.
+                  Paste incoming reviews from Google Maps. AI will compose 3 hospitality-grade replies tailored to your {business.category}.
                 </p>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                {/* Star rating selector */}
+                {/* Customer Star rating */}
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-muted">
                     Customer&apos;s Star Rating
@@ -340,7 +354,8 @@ export default function BusinessDetailPage() {
                         key={star}
                         type="button"
                         onClick={() => setReplyRating(star)}
-                        className="p-1 rounded-lg hover:scale-110 active:scale-95 transition-transform"
+                        className="p-1.5 rounded-lg hover:scale-115 active:scale-95 transition-transform"
+                        aria-label={`Select ${star} stars`}
                       >
                         <Star
                           className={`w-6 h-6 ${
@@ -372,7 +387,7 @@ export default function BusinessDetailPage() {
                 </div>
               </div>
 
-              {/* Review Text */}
+              {/* Review Text Area */}
               <div className="space-y-1.5">
                 <label htmlFor="pasted-review" className="block text-xs font-semibold uppercase tracking-wider text-muted">
                   Paste Customer&apos;s Review Text
@@ -383,9 +398,13 @@ export default function BusinessDetailPage() {
                   onChange={(e) => setCustomerReview(e.target.value)}
                   rows={4}
                   maxLength={2500}
-                  placeholder={`e.g. Loved my appointment at ${business.name}! Staff was super friendly and attentive.`}
+                  placeholder={`e.g. Had an amazing visit at ${business.name}! The atmosphere was warm, staff were attentive, and everything was handled with great care.`}
                   className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40 resize-y"
                 />
+                <div className="flex items-center justify-between text-[11px] text-muted-soft px-1">
+                  <span>{customerReview.length} / 2500 characters</span>
+                  <span>AI references only genuine customer feedback</span>
+                </div>
               </div>
 
               <Button
@@ -404,13 +423,19 @@ export default function BusinessDetailPage() {
             {replies && (
               <div className="space-y-4 animate-fadeIn">
                 <div className="flex items-center justify-between">
-                  <h3 className="font-display font-semibold text-lg text-ink">
-                    Generated Replies
-                  </h3>
+                  <div>
+                    <h3 className="font-display font-semibold text-lg text-ink">
+                      Generated Replies
+                    </h3>
+                    <p className="text-xs text-muted">
+                      Copy your preferred reply and paste it directly into Google Business Profile.
+                    </p>
+                  </div>
+
                   <button
-                    onClick={(e) => handleGenerateReplies(e)}
+                    onClick={() => handleGenerateReplies()}
                     disabled={isGeneratingReplies}
-                    className="inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-surface-card hover:bg-surface-strong border border-hairline rounded-lg text-ink disabled:opacity-50"
+                    className="press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-surface-card hover:bg-surface-strong border border-hairline rounded-lg text-ink disabled:opacity-50"
                   >
                     <RefreshCw className={`w-3.5 h-3.5 ${isGeneratingReplies ? "animate-spin" : ""}`} />
                     <span>Regenerate</span>
@@ -420,22 +445,22 @@ export default function BusinessDetailPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {[
                     { key: "professional", title: "Professional", desc: "Formal hospitality standard", text: replies.professional },
-                    { key: "warm", title: "Warm & Friendly", desc: "Heartfelt neighborhood connection", text: replies.warm },
-                    { key: "concise", title: "Concise", desc: "Direct 2-3 sentence acknowledgement", text: replies.concise },
+                    { key: "warm", title: "Warm & Friendly", desc: "Heartfelt neighborhood tone", text: replies.warm },
+                    { key: "concise", title: "Concise", desc: "Direct 2-sentence acknowledgement", text: replies.concise },
                   ].map((item) => (
                     <div
                       key={item.key}
-                      className="bg-white rounded-2xl border border-hairline p-5 shadow-subtle flex flex-col justify-between space-y-4"
+                      className="bg-white rounded-2xl border border-hairline p-5 shadow-subtle flex flex-col justify-between space-y-4 hover:shadow-card transition-all"
                     >
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-pill bg-surface-card border border-hairline text-ink">
+                          <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-pill bg-surface-card border border-hairline text-ink">
                             {item.title}
                           </span>
                           <button
                             type="button"
                             onClick={() => handleCopyReply(item.key, item.text)}
-                            className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-md transition-all ${
+                            className={`press flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-all ${
                               copiedReplyKey === item.key
                                 ? "bg-emerald-600 text-white"
                                 : "bg-primary text-on-primary hover:bg-black"
@@ -455,14 +480,15 @@ export default function BusinessDetailPage() {
                           </button>
                         </div>
                         <p className="text-xs text-muted-soft">{item.desc}</p>
-                        <p className="text-sm text-body leading-relaxed select-text bg-surface-soft/60 p-3 rounded-xl border border-hairline/80">
+                        <p className="text-sm text-body leading-relaxed select-text bg-surface-soft/60 p-3.5 rounded-xl border border-hairline/80 font-sans">
                           {item.text}
                         </p>
                       </div>
 
-                      <span className="text-[11px] text-muted-soft text-right">
-                        {item.text.length} chars
-                      </span>
+                      <div className="flex items-center justify-between text-[11px] text-muted-soft pt-1 border-t border-hairline/60">
+                        <span>{item.text.split(/\s+/).filter(Boolean).length} words</span>
+                        <span>{item.text.length} chars</span>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -471,22 +497,65 @@ export default function BusinessDetailPage() {
           </div>
         )}
 
-        {/* Tab 2: QR & NFC Stand Kit */}
+        {/* Tab 2: NFC & QR Stand Kit */}
         {activeTab === "qr" && (
           <div className="space-y-6 animate-fadeIn">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-              {/* Stand Preview Simulation */}
-              <div className="space-y-3">
-                <span className="text-xs font-bold uppercase tracking-wider text-muted">
-                  Printable Table Stand / Tent Card Preview
-                </span>
+            {/* Stand Controls & Context */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-card p-4 rounded-2xl border border-hairline no-print">
+              <div className="flex items-center gap-2">
+                <Sliders className="w-4 h-4 text-brand-teal" />
+                <span className="text-xs font-semibold text-ink">Stand Preview Settings:</span>
+              </div>
 
-                {/* Simulated Acrylic Stand */}
-                <div className="bg-gradient-to-b from-white to-surface-card p-8 rounded-3xl border-2 border-hairline shadow-floating text-center max-w-sm mx-auto space-y-5 relative overflow-hidden">
+              {/* Backdrop toggle */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs text-muted">Table Environment:</span>
+                {[
+                  { key: "canvas", label: "Studio Canvas" },
+                  { key: "wood", label: "Cafe Wood" },
+                  { key: "marble", label: "Marble Desk" },
+                ].map((env) => (
+                  <button
+                    key={env.key}
+                    type="button"
+                    onClick={() => setStandBackdrop(env.key as typeof standBackdrop)}
+                    className={`text-xs px-2.5 py-1 rounded-lg border font-medium transition-all ${
+                      standBackdrop === env.key
+                        ? "bg-primary text-on-primary border-primary"
+                        : "bg-white text-ink border-hairline hover:bg-surface-soft"
+                    }`}
+                  >
+                    {env.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+              {/* Stand Preview Simulation Box */}
+              <div
+                className={`p-6 sm:p-10 rounded-3xl border border-hairline shadow-subtle transition-all duration-300 ${
+                  standBackdrop === "wood"
+                    ? "bg-gradient-to-br from-[#3b2317] via-[#2c1910] to-[#1c0e08]"
+                    : standBackdrop === "marble"
+                    ? "bg-gradient-to-br from-[#f3f4f6] via-[#e5e7eb] to-[#d1d5db]"
+                    : "bg-surface-soft"
+                }`}
+              >
+                <div className="text-center pb-3 no-print">
+                  <span className={`text-[11px] font-bold uppercase tracking-wider ${
+                    standBackdrop === "wood" ? "text-amber-200/80" : "text-muted"
+                  }`}>
+                    Acrylic Tent Stand Simulation
+                  </span>
+                </div>
+
+                {/* Printable Table Tent Card */}
+                <div className="printable-stand bg-gradient-to-b from-white to-surface-card p-7 sm:p-8 rounded-3xl border-2 border-hairline shadow-floating text-center max-w-xs mx-auto space-y-4 relative overflow-hidden">
                   <div className="absolute top-0 inset-x-0 h-2 bg-brand-teal" />
 
-                  {/* Stand Logo & Name */}
-                  <div className="space-y-1.5 pt-2">
+                  {/* Brand Logo & Name */}
+                  <div className="space-y-1.5 pt-1">
                     <div className="w-14 h-14 mx-auto rounded-2xl bg-surface-soft border border-hairline flex items-center justify-center overflow-hidden shadow-sm">
                       {business.logoUrl ? (
                         <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
@@ -494,16 +563,16 @@ export default function BusinessDetailPage() {
                         <Building2 className="w-7 h-7 text-muted" />
                       )}
                     </div>
-                    <h3 className="font-display font-bold text-xl text-ink">
+                    <h3 className="font-display font-bold text-xl text-ink leading-tight">
                       {business.name}
                     </h3>
-                    <p className="text-xs text-muted font-medium">
+                    <p className="text-xs text-muted font-medium line-clamp-1">
                       {business.tagline || "We appreciate your feedback!"}
                     </p>
                   </div>
 
-                  {/* Big QR Code */}
-                  <div className="w-48 h-48 mx-auto bg-white p-3 rounded-2xl border-2 border-dashed border-hairline shadow-sm flex items-center justify-center">
+                  {/* High-Contrast QR Code */}
+                  <div className="w-48 h-48 mx-auto bg-white p-3 rounded-2xl border-2 border-hairline shadow-sm flex items-center justify-center">
                     {qrCodeDataUrl ? (
                       <img src={qrCodeDataUrl} alt="QR Code" className="w-full h-full" />
                     ) : (
@@ -511,15 +580,15 @@ export default function BusinessDetailPage() {
                     )}
                   </div>
 
-                  {/* Call to action instructions */}
-                  <div className="space-y-2">
+                  {/* CTA & Rating Stars */}
+                  <div className="space-y-1.5">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-brand-pink/15 text-ink text-[11px] font-bold uppercase tracking-wider">
                       <span>Tap NFC or Scan QR</span>
                     </div>
                     <p className="text-xs text-body font-medium">
-                      Share your experience on Google in 30 seconds
+                      Share your experience on Google in 30s
                     </p>
-                    <div className="flex items-center justify-center gap-1 text-amber-500 pt-1">
+                    <div className="flex items-center justify-center gap-1 text-amber-500 pt-0.5">
                       {[1, 2, 3, 4, 5].map((s) => (
                         <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-500" />
                       ))}
@@ -527,23 +596,24 @@ export default function BusinessDetailPage() {
                   </div>
 
                   <p className="text-[10px] text-muted-soft pt-2 border-t border-hairline">
-                    Powered by Widox Review Engine
+                    Powered by Widox Review Assistant
                   </p>
                 </div>
               </div>
 
               {/* QR Management & Export Actions */}
-              <div className="bg-white rounded-3xl border border-hairline p-6 sm:p-8 shadow-subtle space-y-6">
+              <div className="bg-white rounded-3xl border border-hairline p-6 sm:p-8 shadow-subtle space-y-6 no-print">
                 <div className="space-y-1">
                   <h3 className="font-display font-semibold text-xl text-ink">
                     Deploy Your NFC &amp; QR Stand
                   </h3>
                   <p className="text-xs text-muted leading-relaxed">
-                    This high-resolution QR code and NFC payload points directly to your business&apos;s custom review generator.
+                    This high-resolution QR code and NFC link directs customers directly to your business&apos;s custom review generator.
                   </p>
                 </div>
 
-                <div className="space-y-2">
+                {/* Destination link card */}
+                <div className="space-y-1.5">
                   <label className="block text-xs font-semibold uppercase tracking-wider text-muted">
                     Destination URL
                   </label>
@@ -554,13 +624,14 @@ export default function BusinessDetailPage() {
                         if (navigator.clipboard) navigator.clipboard.writeText(publicUrl);
                         showToast("Copied destination URL!");
                       }}
-                      className="text-muted hover:text-ink font-sans font-semibold text-xs"
+                      className="text-brand-teal hover:underline font-sans font-semibold text-xs"
                     >
                       Copy
                     </button>
                   </div>
                 </div>
 
+                {/* Actions */}
                 <div className="space-y-3 pt-2">
                   <Button
                     variant="primary"
@@ -577,17 +648,18 @@ export default function BusinessDetailPage() {
                     onClick={() => {
                       if (typeof window !== "undefined") window.print();
                     }}
-                    className="w-full py-3 px-4 bg-surface-card hover:bg-surface-strong border border-hairline rounded-xl text-xs font-semibold text-ink flex items-center justify-center gap-2 transition-colors"
+                    className="press w-full py-3 px-4 bg-surface-card hover:bg-surface-strong border border-hairline rounded-xl text-xs font-semibold text-ink flex items-center justify-center gap-2 transition-colors"
                   >
                     <Printer className="w-4 h-4 text-muted" />
                     <span>Print Table Tent Card</span>
                   </button>
                 </div>
 
+                {/* NFC Setup Instructions */}
                 <div className="bg-surface-soft p-4 rounded-2xl border border-hairline space-y-1.5 text-xs text-body">
-                  <span className="font-semibold text-ink block">How to write NFC tags:</span>
-                  <p className="text-muted">
-                    Use any free NFC app (like &ldquo;NFC Tools&rdquo;) on iPhone or Android, select &ldquo;Write URL&rdquo;, and paste your URL above to write NFC stickers or acrylic pucks in 5 seconds.
+                  <span className="font-semibold text-ink block">How to write NFC pucks &amp; stickers:</span>
+                  <p className="text-muted leading-relaxed">
+                    Use any free NFC app (e.g. &ldquo;NFC Tools&rdquo;) on iOS or Android, select &ldquo;Write URL&rdquo;, and paste your link above to program NFC tags for acrylic stands, counter pucks, or billing folios.
                   </p>
                 </div>
               </div>
@@ -599,7 +671,7 @@ export default function BusinessDetailPage() {
         {activeTab === "settings" && (
           <form
             onSubmit={handleSaveSettings}
-            className="bg-white rounded-3xl border border-hairline p-6 sm:p-8 shadow-subtle space-y-5 max-w-2xl animate-fadeIn"
+            className="bg-white rounded-3xl border border-hairline p-6 sm:p-8 shadow-subtle space-y-5 max-w-2xl animate-fadeIn no-print"
           >
             <div className="space-y-1">
               <h3 className="font-display font-semibold text-lg text-ink">

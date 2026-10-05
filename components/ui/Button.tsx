@@ -2,7 +2,7 @@ import React from "react";
 import { Loader2 } from "lucide-react";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "outline" | "ghost" | "amber";
+  variant?: "primary" | "secondary" | "teal" | "pink" | "amber" | "outline" | "ghost";
   size?: "sm" | "md" | "lg";
   isLoading?: boolean;
 }
@@ -17,25 +17,29 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const baseStyles =
-    "inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none active:scale-[0.98]";
+    "press inline-flex items-center justify-center font-display font-semibold transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed select-none";
 
   const variantStyles = {
     primary:
-      "bg-espresso text-cream hover:bg-espresso-light shadow-md shadow-espresso/10 active:bg-espresso-dark",
+      "bg-primary text-on-primary hover:bg-[#1a1a1a] shadow-sm active:bg-black",
     secondary:
-      "bg-cafe-100 text-espresso hover:bg-cafe-200 border border-cafe-200 active:bg-cafe-300",
+      "bg-surface-card text-ink hover:bg-surface-strong border border-hairline active:bg-surface-strong/80",
+    teal:
+      "bg-brand-teal text-white hover:bg-brand-teal/90 shadow-sm active:bg-brand-teal/80",
+    pink:
+      "bg-brand-pink text-white hover:bg-brand-pink/90 shadow-sm active:bg-brand-pink/80",
     amber:
-      "bg-gradient-to-r from-amber-600 to-amber-700 text-white hover:from-amber-700 hover:to-amber-800 shadow-md shadow-amber-600/20 active:from-amber-800",
+      "bg-brand-ochre text-ink hover:bg-brand-ochre/90 shadow-sm active:bg-brand-ochre/80",
     outline:
-      "border-2 border-cafe-300 text-espresso hover:bg-cafe-50 hover:border-cafe-400 active:bg-cafe-100",
+      "border border-hairline text-ink hover:bg-surface-soft active:bg-surface-card",
     ghost:
-      "text-espresso-muted hover:text-espresso hover:bg-cafe-100/60 active:bg-cafe-200/50",
+      "text-muted hover:text-ink hover:bg-surface-soft active:bg-surface-card",
   };
 
   const sizeStyles = {
-    sm: "px-3 py-1.5 text-xs tracking-wide",
-    md: "px-5 py-2.5 text-sm tracking-wide",
-    lg: "px-6 py-3.5 text-base font-semibold",
+    sm: "px-3 py-1.5 text-xs rounded-lg gap-1.5",
+    md: "px-4 py-2.5 text-xs sm:text-sm rounded-xl gap-2",
+    lg: "px-6 py-3.5 text-sm sm:text-base rounded-2xl gap-2.5",
   };
 
   return (
@@ -46,7 +50,7 @@ export const Button: React.FC<ButtonProps> = ({
     >
       {isLoading ? (
         <>
-          <Loader2 className="w-4 h-4 mr-2 animate-spin text-current" />
+          <Loader2 className="w-4 h-4 mr-1 animate-spin text-current" />
           <span>Please wait...</span>
         </>
       ) : (
@@ -55,3 +59,4 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
+

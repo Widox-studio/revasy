@@ -10,6 +10,7 @@
     "test": "node verify_app.js"
   },
   "dependencies": {
+    "@clerk/nextjs": "^5.7.6",
     "@types/qrcode": "^1.5.6",
     "jose": "^5.9.6",
     "lucide-react": "^0.453.0",

@@ -1,0 +1,24 @@
+name = "cocova-review-assistant"
+main = ".open-next/worker.js"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[site]
+bucket = ".open-next/assets"
+
+[vars]
+NEXT_PUBLIC_CLERK_SIGN_IN_URL = "/login"
+NEXT_PUBLIC_CLERK_SIGN_UP_URL = "/login"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL = "/dashboard"
+NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL = "/dashboard"
+
+# Cloudflare KV Storage for business multi-tenant persistence across edge workers:
+# [[kv_namespaces]]
+# binding = "BUSINESSES_KV"
+# id = "<YOUR_KV_NAMESPACE_ID>"
+
+# Cloudflare R2 Bucket for business logo uploads:
+# [[r2_buckets]]
+# binding = "R2_BUCKET"
+# bucket_name = "review-assistant-logos"
+
