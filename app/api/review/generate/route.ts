@@ -3,6 +3,7 @@ import { config } from "@/lib/config";
 import { ReviewGenerateInputSchema, sanitizeText } from "@/lib/validation";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { generateCustomerReviewDrafts } from "@/lib/openai";
+import { getBusinessBySlug, incrementBusinessReviewStats } from "@/lib/business-store";
 
 export async function POST(req: Request) {
   try {
@@ -49,7 +50,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { rating, customerText } = parseResult.data;
+    const { rating, customerText, businessSlug } = parseResult.data;
     const cleanText = sanitizeText(customerText);
 
     if (cleanText.length < 3) {
@@ -59,8 +60,26 @@ export async function POST(req: Request) {
       );
     }
 
+    // Lookup business context if provided
+    let businessName = "Cocova Cafe";
+    let businessCategory = "Cafe & Restaurant";
+
+    if (businessSlug) {
+      const biz = getBusinessBySlug(businessSlug);
+      if (biz) {
+        businessName = biz.name;
+        businessCategory = biz.category;
+        incrementBusinessReviewStats(biz.slug);
+      }
+    }
+
     // 3. Generate review drafts
-    const drafts = await generateCustomerReviewDrafts(rating, cleanText);
+    const drafts = await generateCustomerReviewDrafts(
+      rating,
+      cleanText,
+      businessName,
+      businessCategory
+    );
 
     return NextResponse.json(
       {

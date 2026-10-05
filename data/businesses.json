@@ -1,0 +1,140 @@
+[
+  {
+    "id": "biz_cocova",
+    "slug": "cocova",
+    "name": "Cocova Cafe",
+    "tagline": "Artisan Coffee & Warm Moments",
+    "category": "Cafe & Bakery",
+    "description": "Handcrafted espresso, artisan pastries, and heartwarming neighborhood hospitality.",
+    "googleReviewUrl": "https://search.google.com/local/writereview?placeid=ChIJcocova_demo_place",
+    "logoUrl": "",
+    "accentColor": "teal",
+    "customPrompts": [
+      "Amazing coffee & latte art",
+      "Super friendly baristas",
+      "Delicious pastries & fresh bites",
+      "Cozy atmosphere & great vibe",
+      "Fast service & relaxing music"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-05T15:54:08.723Z",
+    "stats": {
+      "totalReviewsGenerated": 42,
+      "totalRepliesGenerated": 18
+    }
+  },
+  {
+    "id": "biz_apex_dental",
+    "slug": "apex-dental",
+    "name": "Apex Smile Dental",
+    "tagline": "Gentle Care & Radiant Smiles",
+    "category": "Dental & Healthcare",
+    "description": "Modern family dental clinic offering gentle checkups, cosmetic dentistry, and dental hygiene.",
+    "googleReviewUrl": "https://search.google.com/local/writereview?placeid=ChIJapexdental_demo",
+    "logoUrl": "",
+    "accentColor": "mint",
+    "customPrompts": [
+      "Completely painless treatment",
+      "Very gentle and thorough dentist",
+      "Friendly front-desk team",
+      "Immaculately clean modern clinic",
+      "Transparent consultation & pricing"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-05T15:54:08.723Z",
+    "stats": {
+      "totalReviewsGenerated": 19,
+      "totalRepliesGenerated": 8
+    }
+  },
+  {
+    "id": "biz_luxe_salon",
+    "slug": "luxe-salon",
+    "name": "Luxe Studio & Hair Spa",
+    "tagline": "Elevate Your Style",
+    "category": "Salon & Wellness",
+    "description": "Bespoke styling, hair transformations, rejuvenating facials, and luxury care.",
+    "googleReviewUrl": "https://search.google.com/local/writereview?placeid=ChIJluxesalon_demo",
+    "logoUrl": "",
+    "accentColor": "lavender",
+    "customPrompts": [
+      "Flawless haircut and color",
+      "Relaxing head massage & hair spa",
+      "Attentive and talented stylist",
+      "Chic aesthetic & great hospitality",
+      "Booked appointment started right on time"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-05T15:54:08.723Z",
+    "stats": {
+      "totalReviewsGenerated": 27,
+      "totalRepliesGenerated": 12
+    }
+  },
+  {
+    "id": "biz_1791215649164",
+    "slug": "spice-hub-9131",
+    "name": "Spice Hub Gourmet",
+    "tagline": "Authentic Indian Curries & Tandoor",
+    "category": "Cafe & Restaurant",
+    "description": "Award-winning traditional cuisine with modern hospitality.",
+    "googleReviewUrl": "https://search.google.com/local/writereview?placeid=ChIJspicehub_demo",
+    "logoUrl": "",
+    "accentColor": "peach",
+    "customPrompts": [
+      "Butter chicken was heavenly",
+      "Warm garlic naan",
+      "Attentive staff"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-05T15:54:09.164Z",
+    "stats": {
+      "totalReviewsGenerated": 1,
+      "totalRepliesGenerated": 1
+    }
+  },
+  {
+    "id": "biz_1791215787073",
+    "slug": "spice-hub-7035",
+    "name": "Spice Hub Gourmet",
+    "tagline": "Authentic Indian Curries & Tandoor",
+    "category": "Cafe & Restaurant",
+    "description": "Award-winning traditional cuisine with modern hospitality.",
+    "googleReviewUrl": "https://search.google.com/local/writereview?placeid=ChIJspicehub_demo",
+    "logoUrl": "",
+    "accentColor": "peach",
+    "customPrompts": [
+      "Butter chicken was heavenly",
+      "Warm garlic naan",
+      "Attentive staff"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-05T15:56:27.073Z",
+    "stats": {
+      "totalReviewsGenerated": 1,
+      "totalRepliesGenerated": 1
+    }
+  },
+  {
+    "id": "biz_1791215851017",
+    "slug": "spice-hub-0993",
+    "name": "Spice Hub Gourmet",
+    "tagline": "Authentic Indian Curries & Tandoor",
+    "category": "Cafe & Restaurant",
+    "description": "Award-winning traditional cuisine with modern hospitality.",
+    "googleReviewUrl": "https://search.google.com/local/writereview?placeid=ChIJspicehub_demo",
+    "logoUrl": "",
+    "accentColor": "peach",
+    "customPrompts": [
+      "Butter chicken was heavenly",
+      "Warm garlic naan",
+      "Attentive staff"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-05T15:57:31.017Z",
+    "stats": {
+      "totalReviewsGenerated": 1,
+      "totalRepliesGenerated": 1
+    }
+  }
+]

@@ -1,0 +1,427 @@
+"use client";
+
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  ArrowLeft,
+  Building2,
+  Upload,
+  Sparkles,
+  Check,
+  AlertCircle,
+  Link as LinkIcon,
+  Palette,
+  Tag,
+  Plus,
+  Trash2,
+} from "lucide-react";
+import { Button } from "@/components/ui/Button";
+
+const CATEGORIES = [
+  "Cafe & Restaurant",
+  "Bakery & Sweets",
+  "Dental & Healthcare",
+  "Salon & Hair Spa",
+  "Retail & Boutique",
+  "Fitness & Yoga Gym",
+  "Automotive & Garage",
+  "Professional Services",
+  "Hospitality & Hotel",
+];
+
+const ACCENTS = [
+  { key: "teal", label: "Teal (AI & Precision)", bg: "bg-brand-teal" },
+  { key: "pink", label: "Pink (Growth & Warmth)", bg: "bg-brand-pink" },
+  { key: "peach", label: "Peach (Artisan & Cozy)", bg: "bg-brand-peach" },
+  { key: "lavender", label: "Lavender (Modern & Luxe)", bg: "bg-brand-lavender" },
+  { key: "ochre", label: "Ochre (Bold & Friendly)", bg: "bg-brand-ochre" },
+  { key: "mint", label: "Mint (Fresh & Health)", bg: "bg-brand-mint" },
+];
+
+export default function RegisterBusinessPage() {
+  const router = useRouter();
+
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [tagline, setTagline] = useState("");
+  const [description, setDescription] = useState("");
+  const [googleReviewUrl, setGoogleReviewUrl] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
+  const [accentColor, setAccentColor] = useState<"teal" | "pink" | "peach" | "lavender" | "ochre" | "mint">("teal");
+
+  // Prompt chips list
+  const [prompts, setPrompts] = useState<string[]>([
+    "Friendly & welcoming staff",
+    "Clean & comfortable environment",
+    "Exceptional quality",
+  ]);
+  const [newPromptInput, setNewPromptInput] = useState("");
+
+  const [isUploading, setIsUploading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Auto-generate slug from name
+  const handleNameChange = (val: string) => {
+    setName(val);
+    if (!slug || slug === name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")) {
+      const generated = val
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      setSlug(generated);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setErrorMessage(null);
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to upload logo");
+      }
+
+      setLogoUrl(data.url);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Upload error";
+      setErrorMessage(msg);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const handleAddPrompt = () => {
+    const trimmed = newPromptInput.trim();
+    if (!trimmed) return;
+    if (prompts.length >= 8) {
+      setErrorMessage("Maximum 8 prompt chips allowed.");
+      return;
+    }
+    setPrompts([...prompts, trimmed]);
+    setNewPromptInput("");
+  };
+
+  const handleRemovePrompt = (idx: number) => {
+    setPrompts(prompts.filter((_, i) => i !== idx));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage(null);
+
+    if (!name.trim() || !slug.trim() || !googleReviewUrl.trim()) {
+      setErrorMessage("Please fill in Business Name, URL Slug, and Google Review URL.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const res = await fetch("/api/businesses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name.trim(),
+          slug: slug.trim().toLowerCase(),
+          category,
+          tagline: tagline.trim(),
+          description: description.trim(),
+          googleReviewUrl: googleReviewUrl.trim(),
+          logoUrl,
+          accentColor,
+          customPrompts: prompts,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to register business");
+      }
+
+      router.push(`/dashboard/${data.business.slug}`);
+      router.refresh();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "An error occurred";
+      setErrorMessage(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-canvas text-ink pb-16">
+      {/* Top Navbar */}
+      <header className="sticky top-0 z-30 bg-canvas/90 backdrop-blur-md border-b border-hairline px-4 py-3">
+        <div className="max-w-2xl mx-auto flex items-center justify-between">
+          <Link
+            href="/dashboard"
+            className="flex items-center gap-1.5 text-xs font-medium text-muted hover:text-ink transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to Dashboard</span>
+          </Link>
+          <span className="font-display font-semibold text-sm text-ink">
+            widox<span className="text-brand-pink">.</span>
+          </span>
+        </div>
+      </header>
+
+      {/* Main Form Container */}
+      <main className="max-w-2xl mx-auto px-4 pt-8">
+        <div className="space-y-2 mb-6">
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-pink">
+            New Business Profile
+          </span>
+          <h1 className="font-display font-medium text-3xl text-ink">
+            Register Your Business
+          </h1>
+          <p className="text-xs sm:text-sm text-muted">
+            Configure your brand identity and get an instant guest review landing page, live QR code, and AI review assistant.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-hairline p-6 sm:p-8 shadow-subtle space-y-6">
+          {/* Logo Upload Section */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted">
+              Business Logo <span className="text-muted-soft font-normal">(optional)</span>
+            </label>
+            <div className="flex items-center gap-4">
+              <div className="w-20 h-20 rounded-2xl bg-surface-card border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                {logoUrl ? (
+                  <img src={logoUrl} alt="Logo preview" className="w-full h-full object-cover" />
+                ) : (
+                  <Building2 className="w-8 h-8 text-muted" />
+                )}
+              </div>
+
+              <div className="space-y-1.5 flex-1">
+                <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 bg-surface-card hover:bg-surface-strong text-ink rounded-xl border border-hairline text-xs font-semibold transition-colors">
+                  <Upload className="w-3.5 h-3.5" />
+                  <span>{isUploading ? "Uploading..." : "Upload Logo"}</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    disabled={isUploading}
+                  />
+                </label>
+                <p className="text-[11px] text-muted-soft">
+                  PNG, JPG, or SVG up to 5MB. Stored on local/cloud storage.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Name and Slug */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label htmlFor="biz-name" className="block text-xs font-semibold uppercase tracking-wider text-muted">
+                Business Name *
+              </label>
+              <input
+                id="biz-name"
+                type="text"
+                required
+                value={name}
+                onChange={(e) => handleNameChange(e.target.value)}
+                placeholder="e.g. Cocova Cafe"
+                className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="biz-slug" className="block text-xs font-semibold uppercase tracking-wider text-muted">
+                URL Slug *
+              </label>
+              <div className="flex items-center">
+                <span className="text-xs text-muted-soft bg-surface-card border border-r-0 border-hairline px-2.5 py-3 rounded-l-xl">
+                  /b/
+                </span>
+                <input
+                  id="biz-slug"
+                  type="text"
+                  required
+                  value={slug}
+                  onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))}
+                  placeholder="cocova"
+                  className="w-full text-sm text-ink p-3 rounded-r-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Category Selector */}
+          <div className="space-y-1.5">
+            <label htmlFor="biz-category" className="block text-xs font-semibold uppercase tracking-wider text-muted">
+              Industry / Category *
+            </label>
+            <select
+              id="biz-category"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
+            >
+              {CATEGORIES.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Tagline */}
+          <div className="space-y-1.5">
+            <label htmlFor="biz-tagline" className="block text-xs font-semibold uppercase tracking-wider text-muted">
+              Tagline / Vibe
+            </label>
+            <input
+              id="biz-tagline"
+              type="text"
+              value={tagline}
+              onChange={(e) => setTagline(e.target.value)}
+              placeholder="e.g. Artisan Coffee & Warm Moments"
+              maxLength={120}
+              className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
+            />
+          </div>
+
+          {/* Google Review URL */}
+          <div className="space-y-1.5">
+            <label htmlFor="biz-google-url" className="block text-xs font-semibold uppercase tracking-wider text-muted">
+              Google Review URL *
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
+                <LinkIcon className="w-4 h-4" />
+              </div>
+              <input
+                id="biz-google-url"
+                type="url"
+                required
+                value={googleReviewUrl}
+                onChange={(e) => setGoogleReviewUrl(e.target.value)}
+                placeholder="https://search.google.com/local/writereview?placeid=..."
+                className="w-full text-sm text-ink pl-10 pr-3 py-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
+              />
+            </div>
+            <p className="text-[11px] text-muted-soft">
+              Get this from your Google Business Profile &ldquo;Ask for reviews&rdquo; link.
+            </p>
+          </div>
+
+          {/* Accent Color Selection */}
+          <div className="space-y-2">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted">
+              Brand Accent Surface
+            </label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {ACCENTS.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() => setAccentColor(item.key as typeof accentColor)}
+                  className={`flex items-center gap-2 p-2.5 rounded-xl border text-xs text-left font-medium transition-all ${
+                    accentColor === item.key
+                      ? "border-primary bg-surface-card ring-1 ring-primary"
+                      : "border-hairline hover:bg-surface-soft"
+                  }`}
+                >
+                  <span className={`w-4 h-4 rounded-full ${item.bg}`} />
+                  <span className="truncate">{item.label.split(" ")[0]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Prompt Chips */}
+          <div className="space-y-2 pt-2 border-t border-hairline">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted">
+                Guest Thought Prompts (Chips)
+              </label>
+              <span className="text-[11px] text-muted-soft">{prompts.length}/8 chips</span>
+            </div>
+
+            <div className="flex flex-wrap gap-1.5">
+              {prompts.map((p, idx) => (
+                <span
+                  key={idx}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-surface-card border border-hairline text-ink rounded-pill text-xs"
+                >
+                  <span>{p}</span>
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePrompt(idx)}
+                    className="text-muted hover:text-red-500"
+                  >
+                    &times;
+                  </button>
+                </span>
+              ))}
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={newPromptInput}
+                onChange={(e) => setNewPromptInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    handleAddPrompt();
+                  }
+                }}
+                placeholder="Add highlight (e.g. Painless treatment, Great patio)"
+                className="flex-1 text-xs text-ink p-2.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
+              />
+              <button
+                type="button"
+                onClick={handleAddPrompt}
+                className="px-3 py-2 bg-surface-card hover:bg-surface-strong border border-hairline rounded-xl text-xs font-semibold text-ink"
+              >
+                Add
+              </button>
+            </div>
+          </div>
+
+          {/* Error Message */}
+          {errorMessage && (
+            <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
+          {/* Submit Button */}
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            isLoading={isSubmitting}
+            className="w-full text-base font-semibold shadow-widox !rounded-2xl"
+          >
+            <Sparkles className="w-4 h-4 mr-2 text-brand-pink" />
+            <span>Generate Business Experience</span>
+          </Button>
+        </form>
+      </main>
+    </div>
+  );
+}

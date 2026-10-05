@@ -1,41 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;500;600;700&family=Inter:wght@400;500;600;700&family=Kalam:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --foreground-rgb: 31, 20, 18;
-  --background-start-rgb: 253, 251, 247;
-  --background-end-rgb: 247, 241, 231;
+  --color-canvas: #fffaf0;
+  --color-ink: #0a0a0a;
+  --color-brand-pink: #ff4d8b;
+  --color-brand-teal: #1a3a3a;
+  --color-brand-ochre: #e8b94a;
+  --color-surface-card: #f5f0e0;
+  --color-hairline: #e5e5e5;
 }
 
 body {
-  color: rgb(var(--foreground-rgb));
-  background: #fbf8f3;
+  background-color: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom scrollbar for cafe aesthetic */
+/* Widox ochre text selection */
+::selection {
+  background: #e8b94a;
+  color: #0a0a0a;
+}
+
+/* Widox press tactile button behavior */
+.press {
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease;
+}
+.press:active {
+  transform: scale(0.97);
+}
+
+/* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
-
 ::-webkit-scrollbar-track {
-  background: #f4e9de;
+  background: #faf5e8;
 }
-
 ::-webkit-scrollbar-thumb {
-  background: #d09871;
+  background: #d4cfc0;
   border-radius: 9999px;
 }
-
 ::-webkit-scrollbar-thumb:hover {
-  background: #b66742;
-}
-
-::selection {
-  background: #d97706;
-  color: #ffffff;
+  background: #b5b0a2;
 }

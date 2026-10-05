@@ -4,6 +4,7 @@ import { generateOwnerReplyDrafts } from "@/lib/openai";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { config } from "@/lib/config";
 import { getAdminSession } from "@/lib/auth";
+import { getBusinessBySlug, incrementBusinessReplyStats } from "@/lib/business-store";
 
 export async function POST(req: Request) {
   try {
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: errorMsg }, { status: 422 });
     }
 
-    const { customerReview, rating, reviewerName } = parseResult.data;
+    const { customerReview, rating, reviewerName, businessSlug } = parseResult.data;
     const cleanReview = sanitizeText(customerReview);
     const cleanName = reviewerName ? sanitizeText(reviewerName) : undefined;
 
@@ -53,8 +54,26 @@ export async function POST(req: Request) {
       );
     }
 
+    let businessName = "Cocova Cafe";
+    let businessCategory = "Local Business";
+
+    if (businessSlug) {
+      const biz = getBusinessBySlug(businessSlug);
+      if (biz) {
+        businessName = biz.name;
+        businessCategory = biz.category;
+        incrementBusinessReplyStats(biz.slug);
+      }
+    }
+
     // 4. Generate reply options
-    const replies = await generateOwnerReplyDrafts(rating, cleanReview, cleanName);
+    const replies = await generateOwnerReplyDrafts(
+      rating,
+      cleanReview,
+      businessName,
+      businessCategory,
+      cleanName
+    );
 
     return NextResponse.json({
       success: true,

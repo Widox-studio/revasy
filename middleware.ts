@@ -15,11 +15,22 @@ export async function middleware(request: NextRequest) {
     response.headers.set(key, value);
   });
 
-  // Guard for protected admin pages: /admin, /admin/... (except /admin/login)
-  const isAdminPage = pathname.startsWith("/admin") && !pathname.startsWith("/admin/login");
-  const isAdminApi = pathname.startsWith("/api/admin/reply");
+  // Legacy redirects
+  if (pathname === "/admin") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
+  }
+  if (pathname === "/admin/login") {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
+  if (pathname === "/review") {
+    return NextResponse.redirect(new URL("/b/cocova", request.url));
+  }
 
-  if (isAdminPage || isAdminApi) {
+  // Guard protected SaaS dashboard routes: /dashboard, /dashboard/...
+  const isDashboardPage = pathname.startsWith("/dashboard");
+  const isProtectedApi = pathname.startsWith("/api/admin/reply");
+
+  if (isDashboardPage || isProtectedApi) {
     const sessionCookie = request.cookies.get(config.admin.cookieName);
 
     let isAuthenticated = false;
@@ -35,30 +46,30 @@ export async function middleware(request: NextRequest) {
     }
 
     if (!isAuthenticated) {
-      if (isAdminApi) {
+      if (isProtectedApi) {
         return NextResponse.json(
-          { error: "Unauthorized. Please log in as admin." },
+          { error: "Unauthorized. Please log in." },
           { status: 401, headers: response.headers }
         );
       }
 
-      const loginUrl = new URL("/admin/login", request.url);
+      const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("redirect", pathname);
       return NextResponse.redirect(loginUrl);
     }
   }
 
-  // If already logged in and visiting /admin/login, redirect to /admin
-  if (pathname === "/admin/login") {
+  // If already logged in and visiting /login, redirect to /dashboard
+  if (pathname === "/login") {
     const sessionCookie = request.cookies.get(config.admin.cookieName);
     if (sessionCookie?.value) {
       try {
         const { payload } = await jwtVerify(sessionCookie.value, secretKey);
         if (payload.role === "admin") {
-          return NextResponse.redirect(new URL("/admin", request.url));
+          return NextResponse.redirect(new URL("/dashboard", request.url));
         }
       } catch {
-        // Invalid cookie, let them see login page
+        // Continue to login
       }
     }
   }
@@ -68,12 +79,6 @@ export async function middleware(request: NextRequest) {
 
 export const configMiddleware = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
+    "/((?!_next/static|_next/image|favicon.ico|uploads/).*)",
   ],
 };

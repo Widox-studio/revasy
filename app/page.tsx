@@ -1,133 +1,208 @@
 import Link from "next/link";
-import { Coffee, Star, QrCode, Sparkles, ArrowRight, ShieldCheck, Heart } from "lucide-react";
-import { config } from "@/lib/config";
+import {
+  Sparkles,
+  QrCode,
+  Star,
+  ArrowRight,
+  ShieldCheck,
+  Building2,
+  Coffee,
+  HeartPulse,
+  Scissors,
+  ExternalLink,
+  MessageSquareQuote,
+  Zap,
+} from "lucide-react";
 
-export default function HomePage() {
+export default function WidoxSaaSHomePage() {
+  const demoBusinesses = [
+    {
+      name: "Cocova Cafe",
+      category: "Artisan Coffee & Bakery",
+      slug: "cocova",
+      icon: <Coffee className="w-5 h-5 text-brand-pink" />,
+      accent: "border-brand-pink/30 hover:border-brand-pink",
+      badge: "Cafe",
+    },
+    {
+      name: "Apex Smile Dental",
+      category: "Gentle Care & Family Dentistry",
+      slug: "apex-dental",
+      icon: <HeartPulse className="w-5 h-5 text-brand-mint" />,
+      accent: "border-brand-mint/30 hover:border-brand-mint",
+      badge: "Dental",
+    },
+    {
+      name: "Luxe Studio & Hair Spa",
+      category: "Bespoke Styling & Wellness",
+      slug: "luxe-salon",
+      icon: <Scissors className="w-5 h-5 text-brand-lavender" />,
+      accent: "border-brand-lavender/30 hover:border-brand-lavender",
+      badge: "Salon",
+    },
+  ];
+
   return (
-    <main className="min-h-screen flex flex-col justify-between bg-gradient-to-b from-cafe-50 via-crema to-cafe-100/50">
+    <div className="min-h-screen bg-canvas text-ink flex flex-col justify-between selection:bg-brand-ochre selection:text-ink">
       {/* Top Navbar */}
-      <header className="px-5 py-4 border-b border-cafe-200/60 backdrop-blur-sm sticky top-0 z-10 bg-crema/80">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-espresso text-cream flex items-center justify-center shadow-sm">
-              <Coffee className="w-5 h-5 text-amber-400" />
-            </div>
-            <div>
-              <h1 className="font-serif font-bold text-lg text-espresso tracking-tight">
-                {config.cafe.name}
-              </h1>
-              <p className="text-[10px] text-espresso-muted tracking-wider uppercase">
-                Artisan Coffee & Bakery
-              </p>
-            </div>
-          </div>
-
-          <Link
-            href="/admin/login"
-            className="text-xs font-medium text-espresso-muted hover:text-espresso flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-cafe-100 transition-colors"
-          >
-            <ShieldCheck className="w-3.5 h-3.5" />
-            <span>Owner Portal</span>
+      <header className="sticky top-0 z-40 bg-canvas/85 backdrop-blur-md border-b border-hairline px-4 md:px-8 py-3.5">
+        <div className="max-w-6xl mx-auto flex items-center justify-between">
+          <Link href="/" className="font-display font-semibold text-2xl tracking-[-0.04em] text-ink">
+            widox<span className="text-brand-pink">.</span>
           </Link>
+
+          <div className="flex items-center gap-3">
+            <Link
+              href="/login"
+              className="text-xs font-semibold text-muted hover:text-ink px-3 py-2 rounded-md transition-colors"
+            >
+              Sign In
+            </Link>
+            <Link
+              href="/dashboard/new"
+              className="press inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary rounded-md text-xs font-semibold hover:bg-black shadow-sm"
+            >
+              <span>Get Started</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* Hero Section */}
-      <div className="max-w-2xl mx-auto px-5 py-10 sm:py-16 text-center space-y-8 flex-1 flex flex-col justify-center">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-100/80 border border-amber-300/80 text-amber-900 text-xs font-semibold mx-auto">
-          <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-          <span>AI-Powered Google Review Assistant</span>
-        </div>
-
-        {/* Headline */}
-        <div className="space-y-3">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-espresso tracking-tight leading-tight">
-            How was your visit to <br />
-            <span className="text-amber-700">{config.cafe.name}?</span>
-          </h2>
-          <p className="text-sm sm:text-base text-espresso-muted max-w-md mx-auto leading-relaxed">
-            Scan the table QR or tap the NFC stand to turn your quick impressions into a polished, authentic Google review in seconds.
-          </p>
-        </div>
-
-        {/* Central Card with QR preview and primary CTA */}
-        <div className="bg-white p-6 sm:p-8 rounded-3xl border border-cafe-200 shadow-card max-w-md mx-auto w-full space-y-6">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto rounded-2xl bg-cafe-50 border-2 border-dashed border-cafe-300 flex items-center justify-center text-espresso-muted">
-            <QrCode className="w-10 h-10 sm:w-12 sm:h-12 text-espresso" />
+      <main className="max-w-5xl mx-auto px-4 sm:px-6 pt-12 pb-20 space-y-16 flex-1 flex flex-col justify-center">
+        <div className="text-center space-y-5 max-w-2xl mx-auto">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-pill bg-brand-pink/15 text-ink text-xs font-bold uppercase tracking-wider">
+            <Sparkles className="w-3.5 h-3.5 text-brand-pink" />
+            <span>AI Review Assistant by Widox</span>
           </div>
 
-          <div className="space-y-1">
-            <div className="flex items-center justify-center gap-1 text-amber-500">
-              {[1, 2, 3, 4, 5].map((s) => (
-                <Star key={s} className="w-4 h-4 fill-amber-400 text-amber-500" />
-              ))}
-            </div>
-            <p className="text-xs font-medium text-espresso-muted">
-              Tap below to try the guest review experience
+          {/* Main Headline */}
+          <h1 className="font-display font-medium text-4xl sm:text-5xl md:text-6xl text-ink tracking-[-0.03em] leading-[1.08]">
+            Turn In-Store Visits into <br />
+            <span className="text-brand-teal">5-Star Google Reviews</span>
+          </h1>
+
+          <p className="text-base sm:text-lg text-body leading-relaxed max-w-lg mx-auto">
+            Give your diners and clients an instant NFC &amp; QR experience. AI polishes genuine feedback into 3 natural review drafts and guides them directly to Google.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-3">
+            <Link
+              href="/dashboard/new"
+              className="press w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-primary text-on-primary rounded-xl text-sm font-semibold shadow-widox hover:bg-black"
+            >
+              <Zap className="w-4 h-4 text-brand-pink" />
+              <span>Create Your Business QR</span>
+            </Link>
+            <Link
+              href="/login"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 bg-surface-card hover:bg-surface-strong border border-hairline rounded-xl text-sm font-medium text-ink transition-colors"
+            >
+              <ShieldCheck className="w-4 h-4 text-muted" />
+              <span>Owner Portal Demo</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Live Experience Previews */}
+        <div className="space-y-4">
+          <div className="text-center space-y-1">
+            <h2 className="font-display font-semibold text-lg text-ink">
+              Try Active Business Review Experiences
+            </h2>
+            <p className="text-xs text-muted">
+              Click any business below to test the live mobile NFC/QR guest flow
             </p>
           </div>
 
-          <Link
-            href="/review"
-            className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white font-semibold py-3.5 px-6 rounded-2xl shadow-glow transition-all active:scale-[0.98]"
-          >
-            <span>Start Review Flow</span>
-            <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {demoBusinesses.map((biz) => (
+              <Link
+                key={biz.slug}
+                href={`/b/${biz.slug}`}
+                className={`group bg-white p-5 rounded-2xl border ${biz.accent} shadow-subtle hover:shadow-card transition-all space-y-4 flex flex-col justify-between`}
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="w-11 h-11 rounded-xl bg-surface-card border border-hairline flex items-center justify-center group-hover:scale-105 transition-transform">
+                      {biz.icon}
+                    </div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-pill bg-surface-card border border-hairline text-muted">
+                      {biz.badge}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="font-display font-semibold text-lg text-ink group-hover:text-brand-teal transition-colors">
+                      {biz.name}
+                    </h3>
+                    <p className="text-xs text-muted">
+                      {biz.category}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-hairline flex items-center justify-between text-xs font-semibold text-brand-teal">
+                  <span>Open NFC Guest Flow</span>
+                  <ExternalLink className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
 
-        {/* How It Works Steps */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 text-left">
-          <div className="bg-white/60 p-4 rounded-2xl border border-cafe-200/60 space-y-1.5">
-            <div className="w-7 h-7 rounded-lg bg-espresso text-cream flex items-center justify-center text-xs font-bold">
+        {/* Value Props & How it Works */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pt-6">
+          <div className="bg-surface-card p-6 rounded-3xl border border-hairline space-y-2.5">
+            <div className="w-8 h-8 rounded-xl bg-brand-pink text-white flex items-center justify-center font-display font-bold text-sm">
               1
             </div>
-            <h3 className="font-serif font-semibold text-sm text-espresso">
-              Select Your Rating
+            <h3 className="font-display font-semibold text-base text-ink">
+              Register in 60 Seconds
             </h3>
-            <p className="text-xs text-espresso-muted">
-              Pick 1 to 5 stars and enter your genuine impressions.
+            <p className="text-xs text-body leading-relaxed">
+              Upload your logo, pick your category, and paste your Google Review link. Your custom landing page is created immediately.
             </p>
           </div>
 
-          <div className="bg-white/60 p-4 rounded-2xl border border-cafe-200/60 space-y-1.5">
-            <div className="w-7 h-7 rounded-lg bg-amber-600 text-white flex items-center justify-center text-xs font-bold">
+          <div className="bg-surface-card p-6 rounded-3xl border border-hairline space-y-2.5">
+            <div className="w-8 h-8 rounded-xl bg-brand-teal text-white flex items-center justify-center font-display font-bold text-sm">
               2
             </div>
-            <h3 className="font-serif font-semibold text-sm text-espresso">
-              Instant AI Drafts
+            <h3 className="font-display font-semibold text-base text-ink">
+              Print QR &amp; NFC Stands
             </h3>
-            <p className="text-xs text-espresso-muted">
-              Receive 3 distinct styles: Natural, Warm, or Short.
+            <p className="text-xs text-body leading-relaxed">
+              Download your high-resolution QR stand kit or write NFC pucks for table stands, billing counters, and reception desks.
             </p>
           </div>
 
-          <div className="bg-white/60 p-4 rounded-2xl border border-cafe-200/60 space-y-1.5">
-            <div className="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">
+          <div className="bg-surface-card p-6 rounded-3xl border border-hairline space-y-2.5">
+            <div className="w-8 h-8 rounded-xl bg-brand-ochre text-ink flex items-center justify-center font-display font-bold text-sm">
               3
             </div>
-            <h3 className="font-serif font-semibold text-sm text-espresso">
-              Post to Google
+            <h3 className="font-display font-semibold text-base text-ink">
+              AI Replies &amp; Growth
             </h3>
-            <p className="text-xs text-espresso-muted">
-              Auto-copied to clipboard and forwarded to Google Reviews.
+            <p className="text-xs text-body leading-relaxed">
+              Paste incoming Google reviews to generate courteous, tailored owner replies in Professional, Warm, or Concise tones.
             </p>
           </div>
         </div>
-      </div>
+      </main>
 
       {/* Footer */}
-      <footer className="px-5 py-6 border-t border-cafe-200/60 text-center text-xs text-espresso-muted space-y-1">
-        <p className="flex items-center justify-center gap-1">
-          <span>Crafted with</span>
-          <Heart className="w-3.5 h-3.5 text-amber-600 fill-amber-600" />
-          <span>for {config.cafe.name}</span>
+      <footer className="border-t border-hairline bg-surface-soft py-8 px-4 text-center text-xs text-muted space-y-2">
+        <p className="font-display font-semibold text-sm text-ink">
+          widox<span className="text-brand-pink">.</span>
         </p>
-        <p className="text-[11px] text-stone-400">
-          Mobile NFC & QR Review Experience
+        <p>AI Automation &amp; Web Systems for Businesses across India</p>
+        <p className="text-[11px] text-muted-soft">
+          &copy; {new Date().getFullYear()} Widox Studio. All rights reserved.
         </p>
       </footer>
-    </main>
+    </div>
   );
 }

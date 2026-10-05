@@ -9,53 +9,67 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        cafe: {
-          50: "#faf5ef",
-          100: "#f4e9de",
-          200: "#ebd4be",
-          300: "#dfb999",
-          400: "#d09871",
-          500: "#c47c4e",
-          600: "#b66742",
-          700: "#985137",
-          800: "#7c4331",
-          900: "#65392b",
-          950: "#361b14",
+        // Widox Design System Color Tokens (from https://widox.in/design)
+        canvas: "#fffaf0", // Default cream canvas (NON-NEGOTIABLE)
+        primary: {
+          DEFAULT: "#0a0a0a",
+          hover: "#1f1f1f",
         },
-        espresso: {
-          DEFAULT: "#1f1412",
-          dark: "#140c0b",
-          light: "#33211d",
-          muted: "#4e3933",
+        "on-primary": "#ffffff",
+        ink: "#0a0a0a",
+        "body-strong": "#1a1a1a",
+        body: "#3a3a3a",
+        muted: "#6a6a6a",
+        "muted-soft": "#9a9a9a",
+        hairline: "#e5e5e5",
+        "hairline-soft": "#ebebeb",
+
+        // Widox Surface Hierarchy
+        surface: {
+          soft: "#faf5e8",
+          card: "#f5f0e0",
+          strong: "#ebe6d6",
+          dark: "#0a1a1a",
+          "dark-elevated": "#1a2a2a",
         },
-        crema: {
-          DEFAULT: "#fdfbf7",
-          warm: "#f7f1e7",
-          soft: "#f1e7d8",
+
+        // Widox Brand Accents
+        brand: {
+          pink: "#ff4d8b", // Wordmark dot, growth accent
+          teal: "#1a3a3a", // AI & automation surface, featured badges, focus rings
+          lavender: "#b8a4ed", // Web App accent
+          peach: "#ffb084", // Website dev accent
+          ochre: "#e8b94a", // Highlight, speed accent
+          mint: "#a4d4c5", // Success accent
+          coral: "#ff6b5a",
         },
-        amberGold: {
-          DEFAULT: "#d97706",
-          dark: "#b45309",
-          light: "#f59e0b",
-        }
       },
       fontFamily: {
-        serif: ["Georgia", "Cambria", "serif"],
-        sans: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
+        display: [
+          '"Bricolage Grotesque"',
+          "Inter",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "sans-serif",
+        ],
+        body: [
+          "Inter",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "sans-serif",
+        ],
+        hand: ['"Kalam"', '"Segoe Print"', "cursive"],
       },
       boxShadow: {
-        subtle: "0 2px 10px -2px rgba(31, 20, 18, 0.05), 0 4px 20px -2px rgba(31, 20, 18, 0.04)",
-        card: "0 10px 30px -5px rgba(31, 20, 18, 0.08)",
-        floating: "0 20px 40px -10px rgba(31, 20, 18, 0.12)",
+        subtle: "0 2px 12px -2px rgba(10, 10, 10, 0.04), 0 4px 20px -2px rgba(10, 10, 10, 0.03)",
+        card: "0 8px 30px -4px rgba(10, 10, 10, 0.06)",
+        widox: "0 4px 24px rgba(10, 10, 10, 0.05)",
+        floating: "0 20px 40px -10px rgba(10, 10, 10, 0.1)",
       },
-      keyframes: {
-        fadeIn: {
-          "0%": { opacity: "0", transform: "translateY(8px)" },
-          "100%": { opacity: "1", transform: "translateY(0)" },
-        },
-      },
-      animation: {
-        fadeIn: "fadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+      borderRadius: {
+        pill: "9999px",
       },
     },
   },
