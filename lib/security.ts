@@ -8,7 +8,7 @@ const cspDirectives = [
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
   "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.com https://*.clerk.accounts.dev https://*.accounts.dev https://*.protect.clerk.com",
-  "form-action 'self'",
+  "form-action 'self' https://*.clerk.com https://*.clerk.accounts.dev https://*.accounts.dev https://accounts.google.com",
 ];
 
 export const securityHeaders: Record<string, string> = {

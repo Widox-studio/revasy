@@ -1,6 +1,17 @@
 import { NextResponse } from "next/server";
-import fs from "fs";
-import path from "path";
+
+let fs: any = null;
+let path: any = null;
+try {
+  if (typeof process !== "undefined" && process.env.NEXT_RUNTIME !== "edge") {
+    // @ts-ignore
+    fs = require("fs");
+    // @ts-ignore
+    path = require("path");
+  }
+} catch (e) {
+  // Ignore in edge environments
+}
 
 export async function POST(req: Request) {
   try {
