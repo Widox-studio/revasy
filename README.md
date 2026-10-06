@@ -1,121 +1,69 @@
-# Cocova Cafe - AI-Powered Google Review Assistant & Owner Reply Platform
+# Revasy — Multi-Tenant Google Review & NFC Table Stand SaaS Platform
 
-A production-ready MVP built with **Next.js (App Router) + TypeScript + Tailwind CSS** for **Cocova Cafe**.
-
-## Features
-
-### ☕ 1. Customer Review Flow (`/review`)
-- **NFC / QR Code Ready**: Point your table QR stands directly to `/review`.
-- **Interactive 1–5 Star Rating**: Touch-friendly rating selector with friendly sentiment cues.
-- **Genuine Thought Helpers**: Quick prompt chips (*"What did you enjoy?"*, *"How was the food/drinks?"*, *"How was the service?"*) to inspire natural reviews.
-- **Strict Anti-Hallucination AI**: Server-side AI only polishes information provided by the customer; never invents items, staff, or fake details.
-- **3 Polished Options**:
-  - **Natural**: Everyday, balanced, conversational.
-  - **Warm & Friendly**: Enthusiastic, grateful, neighborhood cafe vibe.
-  - **Short & Simple**: Punchy 1–2 sentence summary.
-- **Direct Google Redirection**: One-click **"Continue to Google"** copies the draft to the clipboard and opens Cocova Cafe's Google review URL.
-
-### 🛡️ 2. Cafe Owner Reply Dashboard (`/admin`)
-- **Protected Route**: Protected by HTTP-only, secure HMAC-signed session cookies.
-- **Owner AI Reply Generator**: Paste any Google review, pick the rating, and generate 3 professional replies:
-  - **Professional**: Formal, respectful hospitality standard.
-  - **Warm**: Friendly, personal, neighborhood connection.
-  - **Concise**: Quick 2-3 sentence acknowledgement.
-- **Safe Hospitality Responses**: Never makes unvetted promises or invents policies.
-
-### 🔒 3. Production Security & Performance
-- **Zero Database / Zero CMS**: Stateless, lightweight, zero bloat.
-- **Server-Side API Key Protection**: `OPENAI_API_KEY` never leaks to the client.
-- **Sliding-Window Rate Limiting**: Built-in rate limiter protects AI endpoints against abuse.
-- **Security Headers**: Standard production headers injected via `middleware.ts` (`X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`).
+**Revasy** is an enterprise-grade, multi-tenant AI review acceleration and reputation management platform built with **Next.js 14 (App Router) + TypeScript + Tailwind CSS**, designed for physical storefronts, cafes, clinics, salons, and retail chains.
 
 ---
 
-## Architecture
+## 🌐 Live URLs & Deployment
 
-```text
-app/
-  page.tsx                       # Branded landing page
-  review/
-    page.tsx                     # Customer NFC/QR review flow
-  admin/
-    login/
-      page.tsx                   # Owner login
-    page.tsx                     # Protected owner dashboard
-  api/
-    review/
-      generate/
-        route.ts                 # Customer review AI generation
-    admin/
-      reply/
-        generate/
-          route.ts               # Owner reply AI generation
-      login/
-        route.ts                 # Owner login & HTTP-only cookie
-      logout/
-        route.ts                 # Owner logout
-
-components/
-  review/                        # RatingSelector, ReviewForm, ReviewResults, QuickPromptChips
-  admin/                         # ReplyGenerator, ReplyCard, AdminHeader
-  ui/                            # Button, Card, Badge, Toast
-
-lib/
-  auth.ts                        # HMAC-SHA256 JWT session sign/verify
-  openai.ts                      # OpenAI client & fallback generator
-  validation.ts                  # Zod validation schemas & sanitization
-  config.ts                      # Centralized configuration
-  rate-limit.ts                  # Sliding-window in-memory IP rate limiter
-  security.ts                    # Security headers configuration
-```
+- **Custom Domain**: [https://revasy.widox.in](https://revasy.widox.in)
+- **Cloudflare Edge**: [https://revasy.pages.dev](https://revasy.pages.dev)
+- **GitHub Repository**: [https://github.com/Anand-kumar-dev/revasy](https://github.com/Anand-kumar-dev/revasy)
 
 ---
 
-## Environment Variables
+## 🚀 Key Features
 
-Copy `.env.example` to `.env.local`:
+### 1. Multi-Tenant Merchant System (`/dashboard`)
+- **Self-Serve Onboarding**: Register any business with instant slug generation, category tagging, and custom AI prompt keywords.
+- **Embedded Google Maps Place ID Finder**: Live interactive map with Nominatim & Photon geocoding search to automatically pinpoint physical storefronts and generate 1-click Google review deep-links (`writereview?placeid=...`).
+- **NFC & QR Table Stand Studio**: Dynamic vector SVG QR codes with printable acrylic table stands in 6 designer themes (Teal, Pink, Peach, Lavender, Ochre, Mint).
 
-```env
-# OpenAI API key (server-side only)
-OPENAI_API_KEY=your_openai_api_key_here
+### 2. High-Conversion Customer Review Experience (`/b/[slug]`)
+- **Laws of UX Engineered**:
+  - **Fitts's Law**: 48px touch targets and bottom sticky action bar for thumb ergonomics.
+  - **Doherty Threshold**: Real-time shimmer skeleton loading states (<400ms feedback).
+  - **Peak-End Rule**: Confetti celebration modal upon completion with 1-click auto-clipboard copy before jumping to Google Maps.
+  - **Hick's Law**: Clean 3-tier card steps reducing cognitive load.
+  - **Zeigarnik Effect**: Visual progress stepper (Rating $\to$ Highlights $\to$ Polish).
+- **Anti-Hallucination AI Review Polisher**: Formulates authentic customer feedback into 3 tailored drafts (*Natural*, *Warm & Friendly*, *Short & Simple*) strictly without hallucinating items or staff.
+- **Private Feedback Safeguard**: Ratings $\le 3$ stars route to private direct feedback to protect public ratings.
 
-# Cocova Cafe's official Google review link
-COCOVA_GOOGLE_REVIEW_URL=https://search.google.com/local/writereview?placeid=ChIJplaceholder_cocova
+### 3. AI Owner Reply Generator (`/dashboard/[slug]`)
+- Paste any incoming customer review to generate instant professional hospitality responses with 3 tones (*Professional*, *Warm*, *Concise*).
 
-# Cafe Owner single-account credentials
-ADMIN_EMAIL=owner@cocovacafe.com
-ADMIN_PASSWORD=CocovaSecure2026!
-
-# Session signing secret (minimum 32 characters)
-SESSION_SECRET=cocova-cafe-session-secret-change-in-production-2026-xyz
-```
+### 4. Enterprise Security & Architecture
+- **Clerk Authentication**: Production auth with Google OAuth, session cookies, and developer demo bypass.
+- **Hardened CSP**: Strict Content Security Policy compliant with Clerk and Cloudflare Edge bot detection.
+- **Progressive Web App (PWA)**: Standalone installable PWA manifest with native mobile optimization.
 
 ---
 
-## Local Development & Build
+## 🛠️ Tech Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Styling**: Tailwind CSS 3.4 (Revasy Porcelain & Obsidian Slate theme)
+- **Icons**: Lucide React
+- **Auth**: Clerk (`@clerk/nextjs`) + HMAC signed sessions
+- **AI Engine**: OpenAI GPT-4o-mini / OpenRouter compatible
+- **Hosting**: Cloudflare Pages / Workers
+- **DNS**: Spaceship DNS (`revasy.widox.in` CNAME `revasy.pages.dev`)
+
+---
+
+## 🧪 Testing & Quality Assurance
+
+Run the automated test suites:
 
 ```bash
-# Navigate to project folder
-cd D:\google-review-assistant
+# Run SaaS multi-tenant test suite
+npm test
 
-# Install dependencies (locked to Tailwind CSS 3.4)
-npm install
-
-# Run development server
-npm run dev
-
-# Run production build & typecheck
-npm run build
-
-# Start production server
-npm run start
+# Run all verification suites
+npm run test:all
 ```
 
 ---
 
-## Subdomain Configuration (`cocova.widox.in`)
-
-For deployment with your Spaceship domain `widox.in`:
-- **Record Type**: CNAME
-- **Host / Name**: `cocova`
-- **Target**: `cname.vercel-dns.com` (for Vercel) or your Pages deployment domain.
+## 📄 License
+MIT © Revasy / Widox Studio

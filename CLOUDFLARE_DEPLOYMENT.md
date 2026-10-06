@@ -3,7 +3,8 @@
 ## Overview
 Revasy is production-ready for deployment on **Cloudflare Pages** and **Cloudflare Workers**.
 - **Live Project**: `revasy`
-- **Assigned Subdomain**: `https://revasy.pages.dev`
+- **Custom Subdomain**: `https://revasy.widox.in` (configured via Spaceship CNAME)
+- **Cloudflare Subdomain**: `https://revasy.pages.dev`
 - **GitHub Repository**: `https://github.com/Anand-kumar-dev/revasy.git`
 
 ---

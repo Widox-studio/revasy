@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node verify_app.js"
+    "test": "node tests/verify_saas.js",
+    "test:all": "node tests/verify_saas.js && node tests/verify_ux_edge_cases.js && node tests/verify_frontend.js"
   },
   "dependencies": {
     "@clerk/nextjs": "^5.7.6",
