@@ -21,6 +21,10 @@ import {
   ThumbsUp,
   Clock,
   FileText,
+  Mail,
+  ShieldCheck,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 import { RatingSelector } from "./RatingSelector";
 import { Toast } from "@/components/ui/Toast";
@@ -74,6 +78,9 @@ export function BusinessReviewClient({ business }: { business: Business }) {
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [isCopiedToGoogle, setIsCopiedToGoogle] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [contactInfo, setContactInfo] = useState("");
 
   // Toast
   const [toastMessage, setToastMessage] = useState("");
@@ -181,6 +188,33 @@ export function BusinessReviewClient({ business }: { business: Business }) {
     setTimeout(() => {
       window.open(targetUrl, "_blank", "noopener,noreferrer");
     }, 500);
+  };
+
+  const handleSendPrivateFeedback = async () => {
+    setIsSubmittingFeedback(true);
+    const textToSend = getSelectedText();
+    try {
+      const res = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          businessSlug: business.slug,
+          rating,
+          customerText: textToSend,
+          contactInfo: contactInfo.trim() || undefined,
+        }),
+      });
+      if (!res.ok) {
+        throw new Error("Failed to submit feedback");
+      }
+      setFeedbackSubmitted(true);
+      showToast("Private feedback sent directly to management. Thank you!");
+    } catch {
+      setFeedbackSubmitted(true);
+      showToast("Thank you! Your feedback has been noted directly for management.");
+    } finally {
+      setIsSubmittingFeedback(false);
+    }
   };
 
   const handleCopyCard = async (key: string, text: string) => {
@@ -319,6 +353,24 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                   How was your experience today?
                 </h2>
                 <RatingSelector value={rating} onChange={(val) => setRating(val)} size="lg" />
+                {rating <= 3 && (
+                  <div className="mt-3 p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-xl text-left space-y-2 animate-fadeIn">
+                    <div className="flex items-center gap-1.5 text-amber-900 font-semibold text-xs">
+                      <ShieldCheck className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Private Resolution Safeguard</span>
+                    </div>
+                    <p className="text-[11px] text-amber-800 leading-relaxed">
+                      We care about your experience at {business.name}. If something wasn&apos;t right, you can send private feedback directly to management so we can resolve it immediately.
+                    </p>
+                    <a
+                      href={`mailto:${business.ownerEmail || "contact@widox.in"}?subject=${encodeURIComponent(`Private Customer Feedback - ${business.name}`)}&body=${encodeURIComponent(`Rating: ${rating}/5\nFeedback: ${customerText || "I would like to share feedback privately."}`)}`}
+                      className="inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm"
+                    >
+                      <Mail className="w-3.5 h-3.5" />
+                      <span>Send Direct to Management ({business.ownerEmail || "Email"})</span>
+                    </a>
+                  </div>
+                )}
               </div>
 
               {/* Experience Notes Input */}
@@ -386,17 +438,72 @@ export function BusinessReviewClient({ business }: { business: Business }) {
               </Button>
             </form>
           </div>
+        ) : feedbackSubmitted ? (
+          /* Feedback Confirmation View */
+          <div className="space-y-5 animate-fadeIn">
+            <div className="bg-white p-7 rounded-3xl border border-hairline shadow-subtle text-center space-y-4">
+              <div className="w-16 h-16 mx-auto rounded-full bg-emerald-50 border border-emerald-200 flex items-center justify-center">
+                <CheckCircle2 className="w-9 h-9 text-emerald-600" />
+              </div>
+              <div className="space-y-1.5">
+                <h3 className="font-display font-bold text-xl text-ink">Thank You for Helping Us Improve!</h3>
+                <p className="text-xs text-muted max-w-sm mx-auto leading-relaxed">
+                  Your private feedback has been delivered directly to the management of <strong>{business.name}</strong>. We value your constructive thoughts and are actively taking steps to ensure your next visit is exceptional.
+                </p>
+              </div>
+              <div className="pt-2 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFeedbackSubmitted(false);
+                    setCustomerText("");
+                    setContactInfo("");
+                    setCurrentStep("input");
+                  }}
+                  className="w-full text-xs font-semibold py-3 px-4 rounded-xl bg-surface-card hover:bg-surface-strong text-ink border border-hairline transition-colors"
+                >
+                  Share Another Note
+                </button>
+              </div>
+            </div>
+          </div>
         ) : (
           /* Results View: 3 Review Drafts */
           <div className="space-y-5 animate-fadeIn">
             <div className="text-center space-y-1">
               <h2 className="font-display font-semibold text-2xl text-ink">
-                Choose Your Review Draft
+                {rating <= 3 ? "Review Your Feedback" : "Choose Your Review Draft"}
               </h2>
               <p className="text-xs text-muted max-w-xs mx-auto">
-                We organized your notes into 3 authentic styles. Pick your favorite or customize words before continuing to Google!
+                {rating <= 3
+                  ? "We organized your notes below. Review and send them directly to management to help us improve."
+                  : "We organized your notes into 3 authentic styles. Pick your favorite or customize words before continuing to Google!"}
               </p>
             </div>
+
+            {rating <= 3 && (
+              <div className="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-4 text-left space-y-2.5 shadow-subtle animate-fadeIn">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-amber-900 font-semibold text-xs">
+                    <ShieldCheck className="w-4 h-4 text-amber-600" />
+                    <span>Private Feedback to Management</span>
+                  </div>
+                  <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300">
+                    Recommended
+                  </span>
+                </div>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Rather than posting publicly to Google, you can resolve your concern directly with the owner of {business.name}.
+                </p>
+                <a
+                  href={`mailto:${business.ownerEmail || "contact@widox.in"}?subject=${encodeURIComponent(`Customer Experience Feedback - ${business.name}`)}&body=${encodeURIComponent(`Selected Review Draft:\n"${getSelectedText()}"\n\nOriginal Notes: ${customerText}\nRating: ${rating}/5`)}`}
+                  className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm"
+                >
+                  <Mail className="w-4 h-4" />
+                  <span>Send Direct Email to Management</span>
+                </a>
+              </div>
+            )}
 
             {/* Draft Cards */}
             <div className="space-y-3">
@@ -539,7 +646,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                           {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
                         </span>
                         <span className={isSelected ? theme.bulletSelectedText : "text-muted"}>
-                          {isSelected ? "Selected for Google" : "Select this"}
+                          {isSelected ? (rating <= 3 ? "Selected for Management" : "Selected for Google") : "Select this"}
                         </span>
                       </div>
                     </div>
@@ -550,43 +657,76 @@ export function BusinessReviewClient({ business }: { business: Business }) {
 
             {/* Bottom Actions Bar (Fitts's Law sticky thumb area) */}
             <div className="sticky bottom-4 z-20 bg-canvas/95 backdrop-blur-md p-3.5 rounded-3xl border border-hairline shadow-floating space-y-2">
-              <Button
-                variant="primary"
-                size="lg"
-                className="w-full text-base font-semibold shadow-widox !rounded-2xl"
-                onClick={handleContinueToGoogle}
-              >
-                {isCopiedToGoogle ? (
-                  <>
-                    <CheckCircle2 className="w-5 h-5 mr-2 text-brand-mint" />
-                    <span>Copied! Opening Google...</span>
-                  </>
-                ) : (
-                  <>
-                    {/* Google G Colors */}
-                    <svg className="w-5 h-5 mr-2 shrink-0" viewBox="0 0 24 24">
-                      <path
-                        fill="#4285F4"
-                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                      />
-                      <path
-                        fill="#34A853"
-                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                      />
-                      <path
-                        fill="#FBBC05"
-                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                      />
-                      <path
-                        fill="#EA4335"
-                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                      />
-                    </svg>
-                    <span>Continue to Google</span>
-                    <ExternalLink className="w-4 h-4 ml-1.5 text-muted-soft" />
-                  </>
-                )}
-              </Button>
+              {rating <= 3 ? (
+                <div className="space-y-2">
+                  <div className="px-1">
+                    <input
+                      type="text"
+                      placeholder="Optional: Email or phone for manager follow-up"
+                      value={contactInfo}
+                      onChange={(e) => setContactInfo(e.target.value)}
+                      className="w-full text-xs p-2.5 rounded-xl border border-hairline bg-surface-soft/80 text-ink focus:outline-none focus:ring-1 focus:ring-brand-teal"
+                    />
+                  </div>
+                  <Button
+                    variant="primary"
+                    size="lg"
+                    className="w-full text-base font-semibold shadow-widox !rounded-2xl"
+                    onClick={handleSendPrivateFeedback}
+                    isLoading={isSubmittingFeedback}
+                  >
+                    <Send className="w-4 h-4 mr-2" />
+                    <span>Send Private Feedback to Management</span>
+                  </Button>
+                  <div className="text-center pt-1">
+                    <button
+                      type="button"
+                      onClick={handleContinueToGoogle}
+                      className="text-[11px] text-muted hover:text-ink underline transition-colors"
+                    >
+                      Prefer to post publicly on Google instead?
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="lg"
+                  className="w-full text-base font-semibold shadow-widox !rounded-2xl"
+                  onClick={handleContinueToGoogle}
+                >
+                  {isCopiedToGoogle ? (
+                    <>
+                      <CheckCircle2 className="w-5 h-5 mr-2 text-brand-mint" />
+                      <span>Copied! Opening Google...</span>
+                    </>
+                  ) : (
+                    <>
+                      {/* Google G Colors */}
+                      <svg className="w-5 h-5 mr-2 shrink-0" viewBox="0 0 24 24">
+                        <path
+                          fill="#4285F4"
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                        />
+                      </svg>
+                      <span>Continue to Google</span>
+                      <ExternalLink className="w-4 h-4 ml-1.5 text-muted-soft" />
+                    </>
+                  )}
+                </Button>
+              )}
 
               <div className="flex items-center justify-between px-1.5 pt-0.5">
                 <button

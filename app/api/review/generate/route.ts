@@ -1,10 +1,11 @@
-
 import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { ReviewGenerateInputSchema, sanitizeText } from "@/lib/validation";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { generateCustomerReviewDrafts } from "@/lib/openai";
-import { getBusinessBySlug, incrementBusinessReviewStats } from "@/lib/business-store";
+import { getBusinessBySlugAsync, incrementBusinessReviewStats } from "@/lib/business-store";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
@@ -66,7 +67,7 @@ export async function POST(req: Request) {
     let businessCategory = "Cafe & Restaurant";
 
     if (businessSlug) {
-      const biz = getBusinessBySlug(businessSlug);
+      const biz = await getBusinessBySlugAsync(businessSlug);
       if (biz) {
         businessName = biz.name;
         businessCategory = biz.category;

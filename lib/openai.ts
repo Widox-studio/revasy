@@ -1,19 +1,4 @@
-import OpenAI from "openai";
 import { config } from "./config";
-
-let openaiClient: OpenAI | null = null;
-
-function getOpenAIClient(): OpenAI | null {
-  if (!config.openai.apiKey) {
-    return null;
-  }
-  if (!openaiClient) {
-    openaiClient = new OpenAI({
-      apiKey: config.openai.apiKey,
-    });
-  }
-  return openaiClient;
-}
 
 export interface ReviewDrafts {
   natural: string;
@@ -30,7 +15,7 @@ export interface ReplyDrafts {
 function getCloudflareAiBinding(): any {
   try {
     const env = (process.env as any) || {};
-    return env.AI || (globalThis as any).AI || null;
+    return (globalThis as any).AI || env.AI || (globalThis as any).ai || env.ai || null;
   } catch {
     return null;
   }
@@ -66,7 +51,7 @@ async function callCloudflareWorkersAi(messages: Array<{ role: string; content: 
         body: JSON.stringify({ messages })
       });
       if (res.ok) {
-        const data = await res.json();
+        const data = await res.json() as any;
         return data?.result?.response || data?.result?.choices?.[0]?.message?.content || null;
       }
     } catch (e) {
@@ -74,6 +59,39 @@ async function callCloudflareWorkersAi(messages: Array<{ role: string; content: 
     }
   }
 
+  return null;
+}
+
+/**
+ * Secondary fallback using standard web fetch to OpenAI-compatible completions endpoint
+ */
+async function callOpenAiFallback(messages: Array<{ role: string; content: string }>): Promise<string | null> {
+  const apiKey = config.openai.apiKey;
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: config.openai.model || "gpt-4o-mini",
+        temperature: 0.7,
+        max_tokens: 600,
+        response_format: { type: "json_object" },
+        messages,
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json() as any;
+      return data?.choices?.[0]?.message?.content || null;
+    }
+  } catch (err) {
+    console.warn("OpenAI fallback failed:", err);
+  }
   return null;
 }
 
@@ -157,33 +175,22 @@ Format strictly as JSON:
     console.warn("Cloudflare Workers AI generation failed, checking fallback:", cfErr);
   }
 
-  // 2. Secondary Fallback: OpenAI GPT
-  const client = getOpenAIClient();
-  if (client) {
-    try {
-      const response = await client.chat.completions.create({
-        model: config.openai.model,
-        temperature: 0.7,
-        max_tokens: 600,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      });
-
-      const content = response.choices[0]?.message?.content;
-      if (content) {
-        const parsed = parseJsonOutput(content);
-        return {
-          natural: parsed.natural || parsed.Natural || "",
-          warm: parsed.warm || parsed.Warm || "",
-          short: parsed.short || parsed.Short || "",
-        };
-      }
-    } catch (openaiErr) {
-      console.warn("OpenAI generation failed, using contextual generator fallback:", openaiErr);
+  // 2. Secondary Fallback: OpenAI GPT via native fetch
+  try {
+    const openAiOutput = await callOpenAiFallback([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ]);
+    if (openAiOutput) {
+      const parsed = parseJsonOutput(openAiOutput);
+      return {
+        natural: parsed.natural || parsed.Natural || "",
+        warm: parsed.warm || parsed.Warm || "",
+        short: parsed.short || parsed.Short || "",
+      };
     }
+  } catch (openaiErr) {
+    console.warn("OpenAI generation failed, using contextual generator fallback:", openaiErr);
   }
 
   // 3. Tertiary Fallback: Zero-Hallucination Template Engine
@@ -247,33 +254,22 @@ Format strictly as JSON:
     console.warn("Cloudflare Workers AI reply generation failed, checking fallback:", cfErr);
   }
 
-  // 2. Secondary Fallback: OpenAI GPT
-  const client = getOpenAIClient();
-  if (client) {
-    try {
-      const response = await client.chat.completions.create({
-        model: config.openai.model,
-        temperature: 0.7,
-        max_tokens: 600,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-        ],
-      });
-
-      const content = response.choices[0]?.message?.content;
-      if (content) {
-        const parsed = parseJsonOutput(content);
-        return {
-          professional: parsed.professional || parsed.Professional || "",
-          warm: parsed.warm || parsed.Warm || "",
-          concise: parsed.concise || parsed.Concise || "",
-        };
-      }
-    } catch (openaiErr) {
-      console.warn("OpenAI reply generation failed, using contextual generator fallback:", openaiErr);
+  // 2. Secondary Fallback: OpenAI GPT via native fetch
+  try {
+    const openAiOutput = await callOpenAiFallback([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ]);
+    if (openAiOutput) {
+      const parsed = parseJsonOutput(openAiOutput);
+      return {
+        professional: parsed.professional || parsed.Professional || "",
+        warm: parsed.warm || parsed.Warm || "",
+        concise: parsed.concise || parsed.Concise || "",
+      };
     }
+  } catch (openaiErr) {
+    console.warn("OpenAI reply generation failed, using contextual generator fallback:", openaiErr);
   }
 
   // 3. Tertiary Fallback: Zero-Hallucination Template Engine
@@ -315,25 +311,27 @@ function generateMockReplyDrafts(
   businessName: string,
   reviewerName?: string
 ): ReplyDrafts {
-  const name = reviewerName ? ` ${reviewerName}` : "";
+  const formalGreeting = reviewerName ? `Dear ${reviewerName}` : "Dear valued customer";
+  const warmGreeting = reviewerName ? `Hi ${reviewerName}!` : "Hi there!";
+  const conciseGreeting = reviewerName ? ` ${reviewerName}` : "";
 
   if (rating >= 4) {
     return {
-      professional: `Dear${name}, thank you for taking the time to share your review of ${businessName}. We are delighted to hear your thoughts and appreciate your patronage. We look forward to welcoming you back soon.`,
-      warm: `Hi${name}! Thank you so much for the kind words and support! It means the world to our team at ${businessName}. Can't wait to see you again soon!`,
-      concise: `Thanks for the great review${name}! We're thrilled you had a wonderful experience at ${businessName} and hope to see you again soon.`,
+      professional: `${formalGreeting}, thank you for taking the time to share your review of ${businessName}. We are delighted to hear your thoughts and appreciate your patronage. We look forward to welcoming you back soon.`,
+      warm: `${warmGreeting} Thank you so much for the kind words and support! It means the world to our team at ${businessName}. Can't wait to see you again soon!`,
+      concise: `Thanks for the great review${conciseGreeting}! We're thrilled you had a wonderful experience at ${businessName} and hope to see you again soon.`,
     };
   } else if (rating === 3) {
     return {
-      professional: `Hello${name}, thank you for your candid feedback. At ${businessName}, we strive for consistency and quality with every guest, and we've taken note of your comments to help us improve. We hope to serve you better next time.`,
-      warm: `Hi${name}, thank you for sharing your thoughts with us. We always want to provide a stellar experience, and we appreciate your constructive feedback as we work to keep getting better.`,
-      concise: `Thank you for your feedback${name}. We appreciate you letting us know where we can do better, and we hope to welcome you back soon.`,
+      professional: `${formalGreeting}, thank you for your candid feedback. At ${businessName}, we strive for consistency and quality with every guest, and we've taken note of your comments to help us improve. We hope to serve you better next time.`,
+      warm: `${warmGreeting} Thank you for sharing your thoughts with us. We always want to provide a stellar experience, and we appreciate your constructive feedback as we work to keep getting better.`,
+      concise: `Thank you for your feedback${conciseGreeting}. We appreciate you letting us know where we can do better, and we hope to welcome you back soon.`,
     };
   } else {
     return {
-      professional: `Dear${name}, thank you for bringing this to our attention. We are genuinely sorry to hear that your experience did not meet our usual standards at ${businessName}. We take your feedback seriously and are addressing this with our team. If you'd like to share further details, please reach out to us directly.`,
-      warm: `Hi${name}, we are so sorry your experience fell short. That is never what we want for anyone who visits ${businessName}. We'd truly appreciate the chance to learn more and make things right if you could get in touch with our team.`,
-      concise: `We apologize for your disappointing experience${name}. We appreciate you speaking up, and we are actively working with our team to address this issue.`,
+      professional: `${formalGreeting}, thank you for bringing this to our attention. We are genuinely sorry to hear that your experience did not meet our usual standards at ${businessName}. We take your feedback seriously and are addressing this with our team. If you'd like to share further details, please reach out to us directly.`,
+      warm: `${warmGreeting} We are so sorry your experience fell short. That is never what we want for anyone who visits ${businessName}. We'd truly appreciate the chance to learn more and make things right if you could get in touch with our team.`,
+      concise: `We apologize for your disappointing experience${conciseGreeting}. We appreciate you speaking up, and we are actively working with our team to address this issue.`,
     };
   }
 }

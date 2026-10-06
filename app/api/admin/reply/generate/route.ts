@@ -1,11 +1,12 @@
-
 import { NextResponse } from "next/server";
 import { AdminReplyGenerateInputSchema, sanitizeText } from "@/lib/validation";
 import { generateOwnerReplyDrafts } from "@/lib/openai";
 import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 import { config } from "@/lib/config";
 import { getAdminSession } from "@/lib/auth";
-import { getBusinessBySlug, incrementBusinessReplyStats } from "@/lib/business-store";
+import { getBusinessBySlugAsync, incrementBusinessReplyStats } from "@/lib/business-store";
+
+export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
@@ -59,7 +60,7 @@ export async function POST(req: Request) {
     let businessCategory = "Local Business";
 
     if (businessSlug) {
-      const biz = getBusinessBySlug(businessSlug);
+      const biz = await getBusinessBySlugAsync(businessSlug);
       if (biz) {
         businessName = biz.name;
         businessCategory = biz.category;

@@ -151,7 +151,7 @@ function isFsAvailable(): boolean {
 function getD1Binding(): any {
   try {
     const env = (process.env as any) || {};
-    return env.DB || env.d1 || (globalThis as any).DB || null;
+    return (globalThis as any).DB || env.DB || (globalThis as any).d1 || env.d1 || null;
   } catch {
     return null;
   }
@@ -160,7 +160,15 @@ function getD1Binding(): any {
 function mapRowToBusiness(row: any): Business {
   let customPrompts: string[] = [];
   try {
-    customPrompts = typeof row.custom_prompts === "string" ? JSON.parse(row.custom_prompts) : (row.custom_prompts || []);
+    if (typeof row.custom_prompts === "string") {
+      customPrompts = JSON.parse(row.custom_prompts);
+    } else if (Array.isArray(row.custom_prompts)) {
+      customPrompts = row.custom_prompts;
+    } else if (typeof row.customPrompts === "string") {
+      customPrompts = JSON.parse(row.customPrompts);
+    } else if (Array.isArray(row.customPrompts)) {
+      customPrompts = row.customPrompts;
+    }
   } catch {
     customPrompts = [];
   }
@@ -238,7 +246,15 @@ export async function getAllBusinessesAsync(): Promise<Business[]> {
     try {
       const res = await d1.prepare("SELECT * FROM businesses ORDER BY created_at DESC;").all();
       if (res && res.results && res.results.length > 0) {
-        inMemoryBusinesses = res.results.map(mapRowToBusiness);
+        const d1Businesses = res.results.map(mapRowToBusiness);
+        const existingSlugs = new Set(d1Businesses.map((b: Business) => b.slug.toLowerCase()));
+        const merged = [...d1Businesses];
+        for (const defBiz of inMemoryBusinesses) {
+          if (!existingSlugs.has(defBiz.slug.toLowerCase())) {
+            merged.push(defBiz);
+          }
+        }
+        inMemoryBusinesses = merged;
         return inMemoryBusinesses;
       }
     } catch (e) {
@@ -279,9 +295,9 @@ export async function getBusinessesByOwnerAsync(ownerEmail: string): Promise<Bus
   );
 }
 
-export function saveBusiness(business: Business): Business {
+export async function saveBusinessAsync(business: Business): Promise<Business> {
   const all = getAllBusinesses();
-  const existingIdx = all.findIndex((b) => b.id === business.id || b.slug === business.slug);
+  const existingIdx = all.findIndex((b) => b.id === business.id || b.slug.toLowerCase() === business.slug.toLowerCase());
 
   if (existingIdx >= 0) {
     all[existingIdx] = { ...all[existingIdx], ...business };
@@ -295,7 +311,7 @@ export function saveBusiness(business: Business): Business {
   const d1 = getD1Binding();
   if (d1 && typeof d1.prepare === "function") {
     try {
-      d1.prepare(`INSERT OR REPLACE INTO businesses (
+      await d1.prepare(`INSERT OR REPLACE INTO businesses (
         id, slug, name, tagline, category, description, google_review_url, logo_url, accent_color, custom_prompts, owner_email, total_reviews_generated, total_replies_generated, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`).bind(
         business.id,
@@ -312,9 +328,9 @@ export function saveBusiness(business: Business): Business {
         business.stats?.totalReviewsGenerated || 0,
         business.stats?.totalRepliesGenerated || 0,
         business.createdAt
-      ).run().catch((e: any) => console.warn("D1 edge save warning:", e));
+      ).run();
     } catch (d1Err) {
-      console.warn("D1 save failed:", d1Err);
+      console.warn("D1 edge save warning:", d1Err);
     }
   }
 
@@ -328,7 +344,7 @@ export function saveBusiness(business: Business): Business {
       ) VALUES (
         '${business.id}', '${business.slug}', '${business.name.replace(/'/g, "''")}', '${(business.tagline || "").replace(/'/g, "''")}', '${(business.category || "").replace(/'/g, "''")}', '${(business.description || "").replace(/'/g, "''")}', '${business.googleReviewUrl}', '${business.logoUrl || ""}', '${business.accentColor}', '${JSON.stringify(business.customPrompts || []).replace(/'/g, "''")}', '${business.ownerEmail}', ${business.stats?.totalReviewsGenerated || 0}, ${business.stats?.totalRepliesGenerated || 0}, '${business.createdAt}'
       );`;
-      fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/d1/database/52df4dc3-0470-4abb-a41d-c1d9c534defc/query`, {
+      await fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/d1/database/52df4dc3-0470-4abb-a41d-c1d9c534defc/query`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${cfApiToken}`, "Content-Type": "application/json" },
         body: JSON.stringify({ sql })
@@ -347,6 +363,37 @@ export function saveBusiness(business: Business): Business {
   }
 
   return business;
+}
+
+export function saveBusiness(business: Business): Business {
+  saveBusinessAsync(business).catch((e) => console.warn("saveBusiness error:", e));
+  return business;
+}
+
+export async function saveFeedbackAsync(feedback: {
+  businessSlug: string;
+  rating: number;
+  customerText: string;
+  contactInfo?: string;
+}): Promise<boolean> {
+  const d1 = getD1Binding();
+  if (d1 && typeof d1.prepare === "function") {
+    try {
+      await d1.prepare(`INSERT INTO review_logs (
+        id, business_id, rating, review_text, created_at
+      ) VALUES (?, ?, ?, ?, ?);`).bind(
+        `log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        feedback.businessSlug,
+        feedback.rating,
+        feedback.contactInfo ? `${feedback.customerText}\n[Contact: ${feedback.contactInfo}]` : feedback.customerText,
+        new Date().toISOString()
+      ).run();
+      return true;
+    } catch (e) {
+      console.warn("D1 review_logs save error:", e);
+    }
+  }
+  return true;
 }
 
 export function incrementBusinessReviewStats(slug: string): void {

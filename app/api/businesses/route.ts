@@ -1,7 +1,7 @@
 
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { getBusinessesByOwnerAsync, saveBusiness, getBusinessBySlugAsync, Business } from "@/lib/business-store";
+import { getBusinessesByOwnerAsync, saveBusinessAsync, getBusinessBySlugAsync, Business } from "@/lib/business-store";
 import { BusinessCreateInputSchema, sanitizeText } from "@/lib/validation";
 
 export async function GET(req: Request) {
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
       },
     };
 
-    saveBusiness(newBusiness);
+    await saveBusinessAsync(newBusiness);
 
     return NextResponse.json({ success: true, business: newBusiness }, { status: 201 });
   } catch (error) {

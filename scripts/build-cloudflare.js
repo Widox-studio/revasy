@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 
 console.log("=== 1. Building OpenNext Bundle ===");
-execSync("npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion", {
+execSync("npx opennextjs-cloudflare build --skipNextBuild --dangerouslyUseUnsupportedNextVersion", {
   stdio: "inherit",
 });
 
@@ -48,6 +48,15 @@ console.log(`Collected ${Object.keys(vfs).length} manifest paths into in-memory 
 console.log("=== 3. Bundling _worker.js for Cloudflare Pages ===");
 const bannerCode = `
 import { createRequire } from "node:module";
+import { AsyncLocalStorage } from "node:async_hooks";
+import process from "node:process";
+
+if (typeof globalThis.AsyncLocalStorage === "undefined") {
+  globalThis.AsyncLocalStorage = AsyncLocalStorage;
+}
+if (typeof globalThis.process === "undefined") {
+  globalThis.process = process;
+}
 const _cfReq = createRequire("/worker.js");
 
 const _vfs = ${JSON.stringify(vfs)};
@@ -132,13 +141,23 @@ const _vmStub = {
   }
 };
 
+const _wtStub = {
+  Worker: class Worker { on() {} postMessage() {} terminate() {} },
+  isMainThread: true,
+  parentPort: null,
+  threadId: 0,
+  workerData: null
+};
+
 const _stubs = {
   "fs": _fsStub,
   "node:fs": _fsStub,
   "vm": _vmStub,
   "node:vm": _vmStub,
-  "worker_threads": { Worker: class Worker { on() {} postMessage() {} terminate() {} }, isMainThread: true, parentPort: null, threadId: 0, workerData: null },
-  "node:worker_threads": { Worker: class Worker { on() {} postMessage() {} terminate() {} }, isMainThread: true, parentPort: null, threadId: 0, workerData: null },
+  "async_hooks": { AsyncLocalStorage },
+  "node:async_hooks": { AsyncLocalStorage },
+  "worker_threads": _wtStub,
+  "node:worker_threads": _wtStub,
   "http": { Agent: class Agent {}, STATUS_CODES: { 200: "OK", 404: "Not Found", 500: "Internal Server Error" }, METHODS: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"], createServer: () => ({ listen: () => {}, on: () => {}, close: () => {} }), request: () => ({ on: () => {}, write: () => {}, end: () => {} }), get: () => ({ on: () => {} }) },
   "node:http": { Agent: class Agent {}, STATUS_CODES: { 200: "OK", 404: "Not Found", 500: "Internal Server Error" }, METHODS: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"], createServer: () => ({ listen: () => {}, on: () => {}, close: () => {} }), request: () => ({ on: () => {}, write: () => {}, end: () => {} }), get: () => ({ on: () => {} }) },
   "https": { Agent: class Agent {}, STATUS_CODES: { 200: "OK", 404: "Not Found", 500: "Internal Server Error" }, METHODS: ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"], createServer: () => ({ listen: () => {}, on: () => {}, close: () => {} }), request: () => ({ on: () => {}, write: () => {}, end: () => {} }), get: () => ({ on: () => {} }) },
@@ -160,6 +179,9 @@ const _stubs = {
 };
 
 const require = (m) => {
+  if (m === "fs" || m === "node:fs") return _fsStub;
+  if (m === "vm" || m === "node:vm") return _vmStub;
+  if (m === "worker_threads" || m === "node:worker_threads") return _wtStub;
   const norm = typeof m === "string" ? m.replace(/^node:/, "") : m;
   if (_stubs[m]) return _stubs[m];
   if (_stubs[norm]) return _stubs[norm];
@@ -211,11 +233,13 @@ if (fs.existsSync(workerOutPath)) {
     "export { worker_default as default };"
   );
 
-  // Replace direct __require calls for fs and vm with stubs
+  // Replace direct __require calls for fs, vm, and worker_threads with stubs
   content = content.replace(/__require\(["']node:fs["']\)/g, "_fsStub");
   content = content.replace(/__require\(["']fs["']\)/g, "_fsStub");
   content = content.replace(/__require\(["']node:vm["']\)/g, "_vmStub");
   content = content.replace(/__require\(["']vm["']\)/g, "_vmStub");
+  content = content.replace(/__require\(["']node:worker_threads["']\)/g, "_wtStub");
+  content = content.replace(/__require\(["']worker_threads["']\)/g, "_wtStub");
 
   // In the fetch handler, sync env vars and check env.ASSETS for static assets
   const assetCheck = `
