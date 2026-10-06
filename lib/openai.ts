@@ -27,8 +27,85 @@ export interface ReplyDrafts {
   concise: string;
 }
 
+function getCloudflareAiBinding(): any {
+  try {
+    const env = (process.env as any) || {};
+    return env.AI || (globalThis as any).AI || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Call Cloudflare Workers AI (@cf/meta/llama-3.1-8b-instruct)
+ */
+async function callCloudflareWorkersAi(messages: Array<{ role: string; content: string }>): Promise<string | null> {
+  // 1. Direct Edge Worker Binding if running in Cloudflare runtime
+  const aiBinding = getCloudflareAiBinding();
+  if (aiBinding && typeof aiBinding.run === "function") {
+    try {
+      const result = await aiBinding.run("@cf/meta/llama-3.1-8b-instruct", { messages });
+      return result?.response || result?.choices?.[0]?.message?.content || null;
+    } catch (e) {
+      console.warn("Cloudflare Workers AI binding failed:", e);
+    }
+  }
+
+  // 2. Cloudflare Workers AI HTTP API if credentials exist
+  const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "38d1ceb6731de305dc93daf3659e371c";
+  const cfApiToken = process.env.CLOUDFLARE_API_TOKEN;
+
+  if (cfAccountId && cfApiToken) {
+    try {
+      const res = await fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.1-8b-instruct`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${cfApiToken}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ messages })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data?.result?.response || data?.result?.choices?.[0]?.message?.content || null;
+      }
+    } catch (e) {
+      console.warn("Cloudflare AI HTTP API call failed:", e);
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Clean and parse JSON from AI outputs
+ */
+function parseJsonOutput(raw: string): any {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    // Attempt extracting json from markdown codeblocks
+    const match = raw.match(/```json\s*([\s\S]*?)\s*```/) || raw.match(/```\s*([\s\S]*?)\s*```/);
+    if (match && match[1]) {
+      try {
+        return JSON.parse(match[1]);
+      } catch {}
+    }
+    // Attempt finding outer { and }
+    const firstBrace = raw.indexOf("{");
+    const lastBrace = raw.lastIndexOf("}");
+    if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+      try {
+        return JSON.parse(raw.substring(firstBrace, lastBrace + 1));
+      } catch {}
+    }
+    throw new Error("Unable to parse AI response as JSON");
+  }
+}
+
 /**
  * Generate 3 customer review options based on genuine feedback, rating, and business context.
+ * Pipeline: Primary Cloudflare Workers AI -> Secondary OpenAI -> Fallback Template Engine
  */
 export async function generateCustomerReviewDrafts(
   rating: number,
@@ -36,12 +113,6 @@ export async function generateCustomerReviewDrafts(
   businessName: string = "Cocova Cafe",
   businessCategory: string = "Cafe & Restaurant"
 ): Promise<ReviewDrafts> {
-  const client = getOpenAIClient();
-
-  if (!client) {
-    return generateMockReviewDrafts(rating, customerText, businessName);
-  }
-
   const systemPrompt = `You are a helpful review writing assistant for customers of "${businessName}", a ${businessCategory}.
 Your task is to take the customer's raw, genuine notes about their experience and their star rating (${rating} out of 5 stars) and organize them into 3 polished, natural Google review drafts.
 
@@ -64,40 +135,64 @@ Format strictly as JSON:
   "short": "..."
 }`;
 
+  const userPrompt = `Rating: ${rating} Stars\nCustomer's notes: "${customerText}"`;
+
+  // 1. Primary: Cloudflare Workers AI
   try {
-    const response = await client.chat.completions.create({
-      model: config.openai.model,
-      temperature: 0.7,
-      max_tokens: 600,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `Rating: ${rating} Stars\nCustomer's notes: "${customerText}"`,
-        },
-      ],
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("Empty response from OpenAI");
+    const cfOutput = await callCloudflareWorkersAi([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ]);
+    if (cfOutput) {
+      const parsed = parseJsonOutput(cfOutput);
+      if (parsed.natural && parsed.warm && parsed.short) {
+        return {
+          natural: parsed.natural,
+          warm: parsed.warm,
+          short: parsed.short
+        };
+      }
     }
-
-    const parsed = JSON.parse(content);
-    return {
-      natural: parsed.natural || parsed.Natural || "",
-      warm: parsed.warm || parsed.Warm || "",
-      short: parsed.short || parsed.Short || "",
-    };
-  } catch (error) {
-    console.error("OpenAI generation failed, falling back to contextual generator:", error);
-    return generateMockReviewDrafts(rating, customerText, businessName);
+  } catch (cfErr) {
+    console.warn("Cloudflare Workers AI generation failed, checking fallback:", cfErr);
   }
+
+  // 2. Secondary Fallback: OpenAI GPT
+  const client = getOpenAIClient();
+  if (client) {
+    try {
+      const response = await client.chat.completions.create({
+        model: config.openai.model,
+        temperature: 0.7,
+        max_tokens: 600,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (content) {
+        const parsed = parseJsonOutput(content);
+        return {
+          natural: parsed.natural || parsed.Natural || "",
+          warm: parsed.warm || parsed.Warm || "",
+          short: parsed.short || parsed.Short || "",
+        };
+      }
+    } catch (openaiErr) {
+      console.warn("OpenAI generation failed, using contextual generator fallback:", openaiErr);
+    }
+  }
+
+  // 3. Tertiary Fallback: Zero-Hallucination Template Engine
+  return generateMockReviewDrafts(rating, customerText, businessName);
 }
 
 /**
  * Generate 3 owner reply drafts for Google reviews for any business.
+ * Pipeline: Primary Cloudflare Workers AI -> Secondary OpenAI -> Fallback Template Engine
  */
 export async function generateOwnerReplyDrafts(
   rating: number,
@@ -106,12 +201,6 @@ export async function generateOwnerReplyDrafts(
   businessCategory: string = "Local Business",
   reviewerName?: string
 ): Promise<ReplyDrafts> {
-  const client = getOpenAIClient();
-
-  if (!client) {
-    return generateMockReplyDrafts(rating, customerReview, businessName, reviewerName);
-  }
-
   const nameGreeting = reviewerName ? `Address ${reviewerName} courteously.` : "Use a friendly general greeting.";
 
   const systemPrompt = `You are writing replies on behalf of the owner/management of "${businessName}" (${businessCategory}) to Google reviews.
@@ -136,41 +225,61 @@ Format strictly as JSON:
   "concise": "..."
 }`;
 
+  const userPrompt = `Customer Rating: ${rating} Stars\nReview: "${customerReview}"\nReviewer: ${reviewerName || "Customer"}`;
+
+  // 1. Primary: Cloudflare Workers AI
   try {
-    const response = await client.chat.completions.create({
-      model: config.openai.model,
-      temperature: 0.7,
-      max_tokens: 600,
-      response_format: { type: "json_object" },
-      messages: [
-        { role: "system", content: systemPrompt },
-        {
-          role: "user",
-          content: `Customer Rating: ${rating} Stars\nReview: "${customerReview}"\nReviewer: ${reviewerName || "Customer"}`,
-        },
-      ],
-    });
-
-    const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error("Empty response from OpenAI");
+    const cfOutput = await callCloudflareWorkersAi([
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt }
+    ]);
+    if (cfOutput) {
+      const parsed = parseJsonOutput(cfOutput);
+      if (parsed.professional && parsed.warm && parsed.concise) {
+        return {
+          professional: parsed.professional,
+          warm: parsed.warm,
+          concise: parsed.concise
+        };
+      }
     }
-
-    const parsed = JSON.parse(content);
-    return {
-      professional: parsed.professional || parsed.Professional || "",
-      warm: parsed.warm || parsed.Warm || "",
-      concise: parsed.concise || parsed.Concise || "",
-    };
-  } catch (error) {
-    console.error("OpenAI reply generation failed, falling back to contextual generator:", error);
-    return generateMockReplyDrafts(rating, customerReview, businessName, reviewerName);
+  } catch (cfErr) {
+    console.warn("Cloudflare Workers AI reply generation failed, checking fallback:", cfErr);
   }
+
+  // 2. Secondary Fallback: OpenAI GPT
+  const client = getOpenAIClient();
+  if (client) {
+    try {
+      const response = await client.chat.completions.create({
+        model: config.openai.model,
+        temperature: 0.7,
+        max_tokens: 600,
+        response_format: { type: "json_object" },
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      });
+
+      const content = response.choices[0]?.message?.content;
+      if (content) {
+        const parsed = parseJsonOutput(content);
+        return {
+          professional: parsed.professional || parsed.Professional || "",
+          warm: parsed.warm || parsed.Warm || "",
+          concise: parsed.concise || parsed.Concise || "",
+        };
+      }
+    } catch (openaiErr) {
+      console.warn("OpenAI reply generation failed, using contextual generator fallback:", openaiErr);
+    }
+  }
+
+  // 3. Tertiary Fallback: Zero-Hallucination Template Engine
+  return generateMockReplyDrafts(rating, customerReview, businessName, reviewerName);
 }
 
-/**
- * Contextual fallback generator when API key is not present or API is down.
- */
 function generateMockReviewDrafts(
   rating: number,
   customerText: string,

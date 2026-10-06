@@ -30,8 +30,8 @@ export interface Business {
   };
 }
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const DATA_FILE = path.join(DATA_DIR, "businesses.json");
+const DATA_DIR = path ? path.join(process.cwd(), "data") : "";
+const DATA_FILE = path ? path.join(DATA_DIR, "businesses.json") : "";
 
 // Default initial businesses
 const DEFAULT_BUSINESSES: Business[] = [
@@ -55,7 +55,7 @@ const DEFAULT_BUSINESSES: Business[] = [
     ownerEmail: "owner@cocovacafe.com",
     createdAt: new Date().toISOString(),
     stats: {
-      totalReviewsGenerated: 42,
+      totalReviewsGenerated: 45,
       totalRepliesGenerated: 18,
     },
   },
@@ -107,6 +107,29 @@ const DEFAULT_BUSINESSES: Business[] = [
       totalRepliesGenerated: 12,
     },
   },
+  {
+    id: "biz_1791267909539",
+    slug: "cocova-cafe",
+    name: "Cocova Cafe",
+    tagline: "Artisan Coffee & Warm Moments",
+    category: "Cafe & Restaurant",
+    description: "Aesthetic coffee shop with cozy ambience and handcrafted treats.",
+    googleReviewUrl: "https://search.google.com/local/writereview?placeid=cocova-cafe",
+    logoUrl: "/uploads/logo_1791267891343_jn2hrv.png",
+    accentColor: "peach",
+    customPrompts: [
+      "Artisan coffee was superb",
+      "Delicious pastries & brunch",
+      "Warm, welcoming staff",
+      "Cozy seating & vibe",
+    ],
+    ownerEmail: "advertising.coral@gmail.com",
+    createdAt: new Date().toISOString(),
+    stats: {
+      totalReviewsGenerated: 3,
+      totalRepliesGenerated: 1,
+    },
+  },
 ];
 
 let inMemoryBusinesses: Business[] = [...DEFAULT_BUSINESSES];
@@ -117,20 +140,49 @@ function isFsAvailable(): boolean {
       typeof process !== "undefined" &&
       process.env.NEXT_RUNTIME !== "edge" &&
       typeof fs !== "undefined" &&
-      typeof fs.existsSync === "function"
+      typeof fs.existsSync === "function" &&
+      DATA_FILE !== ""
     );
   } catch {
     return false;
   }
 }
 
-function getKvBinding(): any {
+function getD1Binding(): any {
   try {
     const env = (process.env as any) || {};
-    return env.BUSINESSES_KV || env.KV || (globalThis as any).BUSINESSES_KV || null;
+    return env.DB || env.d1 || (globalThis as any).DB || null;
   } catch {
     return null;
   }
+}
+
+function mapRowToBusiness(row: any): Business {
+  let customPrompts: string[] = [];
+  try {
+    customPrompts = typeof row.custom_prompts === "string" ? JSON.parse(row.custom_prompts) : (row.custom_prompts || []);
+  } catch {
+    customPrompts = [];
+  }
+
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    tagline: row.tagline || "",
+    category: row.category || "General Business",
+    description: row.description || "",
+    googleReviewUrl: row.google_review_url || row.googleReviewUrl || "",
+    logoUrl: row.logo_url || row.logoUrl || "",
+    accentColor: row.accent_color || row.accentColor || "teal",
+    customPrompts,
+    ownerEmail: row.owner_email || row.ownerEmail || "",
+    createdAt: row.created_at || row.createdAt || new Date().toISOString(),
+    stats: {
+      totalReviewsGenerated: row.total_reviews_generated ?? row.stats?.totalReviewsGenerated ?? 0,
+      totalRepliesGenerated: row.total_replies_generated ?? row.stats?.totalRepliesGenerated ?? 0,
+    },
+  };
 }
 
 function ensureDataFile() {
@@ -165,11 +217,11 @@ export function getAllBusinesses(): Business[] {
 
 export function getBusinessesByOwner(ownerEmail: string): Business[] {
   const all = getAllBusinesses();
-  // If owner is the demo/admin or default owner, show businesses, or filter by email
   return all.filter(
     (b) =>
       b.ownerEmail.toLowerCase() === ownerEmail.toLowerCase() ||
       ownerEmail.toLowerCase() === "owner@cocovacafe.com" ||
+      ownerEmail.toLowerCase() === "admin@revasy.com" ||
       ownerEmail.toLowerCase() === "admin@widox.in"
   );
 }
@@ -192,18 +244,52 @@ export function saveBusiness(business: Business): Business {
 
   inMemoryBusinesses = all;
 
-  // Cloudflare KV persistence if deployed to Cloudflare Workers
-  const kv = getKvBinding();
-  if (kv && typeof kv.put === "function") {
+  // 1. Cloudflare D1 Native Edge Binding
+  const d1 = getD1Binding();
+  if (d1 && typeof d1.prepare === "function") {
     try {
-      kv.put("businesses", JSON.stringify(all));
-      kv.put(`biz_${business.slug}`, JSON.stringify(business));
-    } catch (kvErr) {
-      console.warn("Failed saving to Cloudflare KV:", kvErr);
+      d1.prepare(`INSERT OR REPLACE INTO businesses (
+        id, slug, name, tagline, category, description, google_review_url, logo_url, accent_color, custom_prompts, owner_email, total_reviews_generated, total_replies_generated, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`).bind(
+        business.id,
+        business.slug,
+        business.name,
+        business.tagline || "",
+        business.category || "",
+        business.description || "",
+        business.googleReviewUrl,
+        business.logoUrl || "",
+        business.accentColor,
+        JSON.stringify(business.customPrompts || []),
+        business.ownerEmail,
+        business.stats?.totalReviewsGenerated || 0,
+        business.stats?.totalRepliesGenerated || 0,
+        business.createdAt
+      ).run().catch((e: any) => console.warn("D1 edge save warning:", e));
+    } catch (d1Err) {
+      console.warn("D1 save failed:", d1Err);
     }
   }
 
-  // Local filesystem persistence if running in Node.js
+  // 2. Cloudflare D1 HTTP API Background Persistence (if API token present)
+  const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "38d1ceb6731de305dc93daf3659e371c";
+  const cfApiToken = process.env.CLOUDFLARE_API_TOKEN;
+  if (cfAccountId && cfApiToken) {
+    try {
+      const sql = `INSERT OR REPLACE INTO businesses (
+        id, slug, name, tagline, category, description, google_review_url, logo_url, accent_color, custom_prompts, owner_email, total_reviews_generated, total_replies_generated, created_at
+      ) VALUES (
+        '${business.id}', '${business.slug}', '${business.name.replace(/'/g, "''")}', '${(business.tagline || "").replace(/'/g, "''")}', '${(business.category || "").replace(/'/g, "''")}', '${(business.description || "").replace(/'/g, "''")}', '${business.googleReviewUrl}', '${business.logoUrl || ""}', '${business.accentColor}', '${JSON.stringify(business.customPrompts || []).replace(/'/g, "''")}', '${business.ownerEmail}', ${business.stats?.totalReviewsGenerated || 0}, ${business.stats?.totalRepliesGenerated || 0}, '${business.createdAt}'
+      );`;
+      fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/d1/database/52df4dc3-0470-4abb-a41d-c1d9c534defc/query`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${cfApiToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ sql })
+      }).catch(() => {});
+    } catch {}
+  }
+
+  // 3. Local filesystem persistence if running in Node.js
   if (isFsAvailable()) {
     try {
       ensureDataFile();

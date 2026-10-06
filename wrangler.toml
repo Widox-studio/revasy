@@ -1,24 +1,19 @@
 name = "revasy"
-main = ".open-next/worker.js"
+pages_build_output_dir = ".open-next/assets"
 compatibility_date = "2024-09-23"
 compatibility_flags = ["nodejs_compat"]
 
-[site]
-bucket = ".open-next/assets"
-
 [vars]
+NEXT_PUBLIC_APP_URL = "https://revasy.widox.in"
 NEXT_PUBLIC_CLERK_SIGN_IN_URL = "/login"
 NEXT_PUBLIC_CLERK_SIGN_UP_URL = "/login"
 NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL = "/dashboard"
 NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL = "/dashboard"
 
-# Cloudflare KV Storage for business multi-tenant persistence across edge workers:
-# [[kv_namespaces]]
-# binding = "BUSINESSES_KV"
-# id = "<YOUR_KV_NAMESPACE_ID>"
+[[d1_databases]]
+binding = "DB"
+database_name = "revasy-db"
+database_id = "52df4dc3-0470-4abb-a41d-c1d9c534defc"
 
-# Cloudflare R2 Bucket for business logo uploads:
-# [[r2_buckets]]
-# binding = "R2_BUCKET"
-# bucket_name = "review-assistant-logos"
-
+[ai]
+binding = "AI"
