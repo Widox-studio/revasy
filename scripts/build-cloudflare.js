@@ -18,11 +18,27 @@ if (fs.existsSync(workerSourcePath)) {
 }
 
 console.log("=== 3. Bundling _worker.js for Cloudflare Pages ===");
-const bannerJs = 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);';
-execSync(
-  `npx esbuild .open-next/worker.js --bundle --platform=node --format=esm --target=es2022 --outfile=.open-next/assets/_worker.js --external:node:* --external:cloudflare:* --banner:js="${bannerJs}" --define:process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY='"pk_test_d29ydGh5LWNoaWNrZW4tNTY2NC5jbGVyay5hY2NvdW50cy5kZXYk"' --define:process.env.NEXT_PUBLIC_APP_URL='"https://revasy.widox.in"'`,
-  { stdio: "inherit" }
-);
+const esbuild = require("esbuild");
+esbuild.buildSync({
+  entryPoints: [path.join(".open-next", "worker.js")],
+  bundle: true,
+  platform: "node",
+  format: "esm",
+  target: "es2022",
+  outfile: path.join(".open-next", "assets", "_worker.js"),
+  external: ["node:*", "cloudflare:*"],
+  banner: {
+    js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);',
+  },
+  define: {
+    "process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": JSON.stringify(
+      "pk_test_d29ydGh5LWNoaWNrZW4tNTY2NC5jbGVyay5hY2NvdW50cy5kZXYk"
+    ),
+    "process.env.NEXT_PUBLIC_APP_URL": JSON.stringify(
+      "https://revasy.widox.in"
+    ),
+  },
+});
 
 console.log("=== 4. Cleaning exports and injecting safety wrapper ===");
 const workerOutPath = path.join(".open-next", "assets", "_worker.js");
