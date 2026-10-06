@@ -28,7 +28,7 @@ esbuild.buildSync({
   outfile: path.join(".open-next", "assets", "_worker.js"),
   external: ["node:*", "cloudflare:*"],
   banner: {
-    js: 'import { createRequire } from "node:module"; const require = createRequire("/worker.js");',
+    js: 'import { createRequire } from "node:module"; const _cfReq = createRequire("/worker.js"); const require = (m) => (m === "fs" || m === "node:fs" ? { existsSync: () => false, readFileSync: () => "", writeFileSync: () => {}, mkdirSync: () => {}, statSync: () => ({ isDirectory: () => false }), promises: { readFile: async () => "", writeFile: async () => "" } } : _cfReq(m));',
   },
   define: {
     "process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": JSON.stringify(
@@ -50,6 +50,11 @@ if (fs.existsSync(workerOutPath)) {
     /export\s*\{[^}]*worker_default\s+as\s+default[^}]*\};/g,
     "export { worker_default as default };"
   );
+
+  // Replace any direct __require("node:fs") or __require("fs") with stub
+  const fsStub = '({ existsSync: () => false, readFileSync: () => "", writeFileSync: () => {}, mkdirSync: () => {}, statSync: () => ({ isDirectory: () => false }), promises: { readFile: async () => "", writeFile: async () => "" } })';
+  content = content.replace(/__require\(["']node:fs["']\)/g, fsStub);
+  content = content.replace(/__require\(["']fs["']\)/g, fsStub);
 
   // In the fetch handler, sync env vars and check env.ASSETS for static assets
   const assetCheck = `
@@ -98,9 +103,6 @@ if (fs.existsSync(workerOutPath)) {
     /\}\s*\n\};\s*\nexport\s*\{\s*worker_default\s+as\s+default\s*\};/g,
     `    } catch (err) {
       console.error("[Pages Worker Unhandled Error]:", err);
-      if (env && env.ASSETS) {
-        try { return await env.ASSETS.fetch(request); } catch (_) {}
-      }
       return new Response("App Error: " + (err.stack || err.message), {
         status: 500,
         headers: { "Content-Type": "text/plain; charset=utf-8" }
