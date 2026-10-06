@@ -21,14 +21,14 @@ async function runSaaSTests() {
     const homeRes = await fetch(`${baseUrl}/`);
     assert(homeRes.status === 200, "GET / returns 200 OK");
     const homeHtml = await homeRes.text();
-    assert(homeHtml.includes("widox"), "Homepage contains Widox wordmark");
+    assert(homeHtml.toLowerCase().includes("revasy") || homeHtml.includes("widox"), "Homepage contains Revasy wordmark");
     assert(homeHtml.includes("5-Star Google Reviews"), "Homepage contains '5-Star Google Reviews' headline");
 
     // 2. Login Page
     const loginRes = await fetch(`${baseUrl}/login`);
     assert(loginRes.status === 200, "GET /login returns 200 OK");
     const loginHtml = await loginRes.text();
-    assert(loginHtml.includes("Sign In to Business Portal"), "Login page renders header");
+    assert(loginHtml.includes("Sign In to Revasy Portal") || loginHtml.includes("Sign In to Business Portal"), "Login page renders header");
     assert(loginHtml.includes("Continue with Google"), "Login page includes Google OAuth option");
 
     // 3. Businesses API

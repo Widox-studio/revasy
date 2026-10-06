@@ -2,14 +2,14 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Widox Review Assistant",
-    short_name: "Widox Reviews",
+    name: "Revasy Review Assistant",
+    short_name: "Revasy",
     description:
-      "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by Widox.",
+      "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by Revasy.",
     start_url: "/",
     display: "standalone",
-    background_color: "#fffaf0",
-    theme_color: "#fffaf0",
+    background_color: "#f8fafc",
+    theme_color: "#4f46e5",
     icons: [
       {
         src: "/favicon.ico",

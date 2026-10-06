@@ -95,6 +95,7 @@ export function validateAdminCredentials(email: string, pass: string): boolean {
 
   const validEmails = [
     config.admin.email.toLowerCase().trim(),
+    "admin@revasy.com",
     "admin@widox.in",
     "owner@cocovacafe.com",
     "admin@cocova.in",

@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { getAllBusinesses } from "@/lib/business-store";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://widox.in";
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://revasy.pages.dev";
   const businesses = getAllBusinesses();
 
   const businessEntries: MetadataRoute.Sitemap = businesses.map((biz) => ({

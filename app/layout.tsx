@@ -16,15 +16,15 @@ const bricolage = Bricolage_Grotesque({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://widox.in"),
-  title: "Widox Review Assistant | AI Google Reviews & NFC Stands",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://revasy.pages.dev"),
+  title: "Revasy | AI Google Reviews & Smart NFC Stands",
   description:
-    "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by Widox.",
+    "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by Revasy.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Widox Reviews",
+    title: "Revasy Reviews",
   },
   formatDetection: {
     telephone: false,
@@ -35,22 +35,22 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://widox.in",
-    siteName: "Widox Review Assistant",
-    title: "Widox Review Assistant | AI Google Reviews & NFC Stands",
+    url: "https://revasy.pages.dev",
+    siteName: "Revasy Review Assistant",
+    title: "Revasy | AI Google Reviews & Smart NFC Stands",
     description:
-      "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by Widox.",
+      "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by Revasy.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Widox Review Assistant | AI Google Reviews & NFC Stands",
+    title: "Revasy | AI Google Reviews & Smart NFC Stands",
     description:
-      "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by Widox.",
+      "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by Revasy.",
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fffaf0",
+  themeColor: "#4f46e5",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,

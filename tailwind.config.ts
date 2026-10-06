@@ -9,39 +9,39 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Widox Design System Color Tokens (from https://widox.in/design)
-        canvas: "#fffaf0", // Default cream canvas (NON-NEGOTIABLE)
+        // Revasy Professional SaaS Design System Tokens
+        canvas: "#f8fafc", // Ultra-clean porcelain slate canvas
         primary: {
-          DEFAULT: "#0a0a0a",
-          hover: "#1f1f1f",
+          DEFAULT: "#4f46e5", // Electric Revasy Indigo
+          hover: "#4338ca",
         },
         "on-primary": "#ffffff",
-        ink: "#0a0a0a",
-        "body-strong": "#1a1a1a",
-        body: "#3a3a3a",
-        muted: "#6a6a6a",
-        "muted-soft": "#9a9a9a",
-        hairline: "#e5e5e5",
-        "hairline-soft": "#ebebeb",
+        ink: "#0f172a", // Obsidian Slate
+        "body-strong": "#1e293b",
+        body: "#334155",
+        muted: "#64748b",
+        "muted-soft": "#94a3b8",
+        hairline: "#e2e8f0",
+        "hairline-soft": "#f1f5f9",
 
-        // Widox Surface Hierarchy
+        // Revasy Surface Hierarchy
         surface: {
-          soft: "#faf5e8",
-          card: "#f5f0e0",
-          strong: "#ebe6d6",
-          dark: "#0a1a1a",
-          "dark-elevated": "#1a2a2a",
+          soft: "#f1f5f9",
+          card: "#ffffff",
+          strong: "#e2e8f0",
+          dark: "#0f172a",
+          "dark-elevated": "#1e293b",
         },
 
-        // Widox Brand Accents
+        // Revasy Vibrant Brand Accents
         brand: {
-          pink: "#ff4d8b", // Wordmark dot, growth accent
-          teal: "#1a3a3a", // AI & automation surface, featured badges, focus rings
-          lavender: "#b8a4ed", // Web App accent
-          peach: "#ffb084", // Website dev accent
-          ochre: "#e8b94a", // Highlight, speed accent
-          mint: "#a4d4c5", // Success accent
-          coral: "#ff6b5a",
+          pink: "#6366f1", // Revasy Indigo-Violet Flagship Accent
+          teal: "#0d9488", // Deep Emerald-Teal
+          lavender: "#8b5cf6", // Royal Violet
+          peach: "#f97316", // Warm Coral-Peach
+          ochre: "#f59e0b", // Golden Amber
+          mint: "#10b981", // Fresh Mint-Emerald
+          coral: "#f43f5e",
         },
       },
       fontFamily: {
@@ -74,10 +74,11 @@ const config: Config = {
         hand: ['"Kalam"', '"Segoe Print"', "cursive"],
       },
       boxShadow: {
-        subtle: "0 2px 12px -2px rgba(10, 10, 10, 0.04), 0 4px 20px -2px rgba(10, 10, 10, 0.03)",
-        card: "0 8px 30px -4px rgba(10, 10, 10, 0.06)",
-        widox: "0 4px 24px rgba(10, 10, 10, 0.05)",
-        floating: "0 20px 40px -10px rgba(10, 10, 10, 0.1)",
+        subtle: "0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05)",
+        card: "0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02)",
+        widox: "0 4px 20px -2px rgba(79, 70, 229, 0.15), 0 2px 6px -1px rgba(15, 23, 42, 0.04)",
+        revasy: "0 10px 30px -4px rgba(79, 70, 229, 0.18), 0 4px 10px -2px rgba(15, 23, 42, 0.04)",
+        floating: "0 20px 40px -10px rgba(15, 23, 42, 0.12)",
       },
       borderRadius: {
         pill: "9999px",

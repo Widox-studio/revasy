@@ -13,12 +13,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const business = getBusinessBySlug(params.slug);
   if (!business) {
     return {
-      title: "Business Not Found | Widox Review Assistant",
+      title: "Business Not Found | Revasy Review Assistant",
       description: "The requested business review page could not be found.",
     };
   }
 
-  const title = `Review ${business.name} on Google | Powered by Widox`;
+  const title = `Review ${business.name} on Google | Powered by Revasy`;
   const description =
     business.tagline ||
     `Leave genuine feedback for ${business.name}. AI organizes your thoughts into a polished Google review in 30 seconds.`;
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       type: "website",
-      siteName: "Widox Review Assistant",
+      siteName: "Revasy Review Assistant",
       ...(business.logoUrl
         ? {
             images: [
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       card: "summary_large_image",
       title,
       description,
-      creator: "@widox",
+      creator: "@revasy",
       ...(business.logoUrl
         ? {
             images: [business.logoUrl],

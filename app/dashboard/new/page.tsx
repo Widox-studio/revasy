@@ -252,8 +252,9 @@ export default function RegisterBusinessPage() {
             <ArrowLeft className="w-4 h-4" />
             <span>Back to Dashboard</span>
           </Link>
-          <span className="font-display font-semibold text-sm text-ink">
-            widox<span className="text-brand-pink">.</span>
+          <span className="font-display font-bold text-sm text-ink flex items-center gap-0.5">
+            <span>revasy</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-600 inline-block" />
           </span>
         </div>
       </header>

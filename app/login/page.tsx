@@ -101,11 +101,12 @@ export default function LoginPage() {
       <div className="max-w-md w-full space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <Link href="/" className="inline-block font-display font-semibold text-3xl tracking-[-0.04em] text-ink">
-            widox<span className="text-brand-pink">.</span>
+          <Link href="/" className="inline-flex items-center gap-1 font-display font-bold text-3xl tracking-[-0.04em] text-ink group">
+            <span>revasy</span>
+            <span className="w-2.5 h-2.5 rounded-full bg-indigo-600 inline-block group-hover:scale-125 transition-transform" />
           </Link>
           <h1 className="font-display font-medium text-2xl text-ink">
-            Sign In to Business Portal
+            Sign In to Revasy Portal
           </h1>
           <p className="text-xs text-muted">
             Manage your Google reviews, NFC stand kits, and AI reply assistant.
@@ -217,26 +218,26 @@ export default function LoginPage() {
           </form>
 
           {/* Quick Demo Access Bar */}
-          <div className="bg-surface-soft p-3.5 rounded-2xl border border-hairline space-y-2 text-xs">
+          <div className="bg-slate-50 p-3.5 rounded-2xl border border-hairline space-y-2 text-xs">
             <span className="font-semibold text-ink block">Instant One-Click Demo Access:</span>
             <div className="flex flex-col gap-1.5">
               <button
                 type="button"
                 onClick={() => handleQuickDemoLogin("owner@cocovacafe.com")}
-                className="press text-left py-2 px-2.5 rounded-xl hover:bg-surface-card text-xs text-brand-teal font-medium flex items-center justify-between border border-transparent hover:border-hairline transition-all"
+                className="press text-left py-2 px-2.5 rounded-xl hover:bg-white text-xs text-indigo-700 font-medium flex items-center justify-between border border-transparent hover:border-hairline transition-all"
               >
                 <span>☕ Cocova Cafe Owner</span>
-                <span className="text-[10px] font-semibold text-brand-pink bg-brand-pink/10 px-2 py-0.5 rounded-pill">
+                <span className="text-[10px] font-semibold text-indigo-600 bg-indigo-100/70 px-2 py-0.5 rounded-pill">
                   Auto-fill &amp; Login
                 </span>
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickDemoLogin("admin@widox.in")}
-                className="press text-left py-2 px-2.5 rounded-xl hover:bg-surface-card text-xs text-brand-pink font-medium flex items-center justify-between border border-transparent hover:border-hairline transition-all"
+                onClick={() => handleQuickDemoLogin("admin@revasy.com")}
+                className="press text-left py-2 px-2.5 rounded-xl hover:bg-white text-xs text-indigo-700 font-medium flex items-center justify-between border border-transparent hover:border-hairline transition-all"
               >
-                <span>🏢 Widox Studio Admin</span>
-                <span className="text-[10px] font-semibold text-brand-teal bg-brand-teal/10 px-2 py-0.5 rounded-pill">
+                <span>⚡ Revasy Super Admin</span>
+                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-pill">
                   Auto-fill &amp; Login
                 </span>
               </button>
@@ -246,7 +247,7 @@ export default function LoginPage() {
 
         <div className="text-center">
           <Link href="/" className="text-xs font-medium text-muted hover:text-ink transition-colors">
-            ← Return to Widox Home
+            ← Return to Revasy Home
           </Link>
         </div>
       </div>

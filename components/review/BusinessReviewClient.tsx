@@ -225,7 +225,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
             className="flex items-center gap-1.5 text-xs font-medium text-muted hover:text-ink transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>widox<span className="text-brand-pink">.</span></span>
+            <span className="font-display font-bold">revasy<span className="text-brand-pink">.</span></span>
           </Link>
 
           <span className="font-display font-semibold text-sm text-ink truncate max-w-[180px]">

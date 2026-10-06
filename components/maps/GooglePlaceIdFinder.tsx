@@ -401,7 +401,7 @@ export function GooglePlaceIdFinder({
                     size="sm"
                     onClick={handleApplySelected}
                     disabled={!selectedPlace}
-                    className="!rounded-xl shadow-widox flex-1 sm:flex-initial"
+                    className="!rounded-xl shadow-revasy flex-1 sm:flex-initial"
                   >
                     <Check className="w-3.5 h-3.5 mr-1.5" />
                     <span>Apply &amp; Set Review URL</span>

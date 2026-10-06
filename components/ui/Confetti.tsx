@@ -20,13 +20,13 @@ interface Particle {
   shape: "rect" | "circle";
 }
 
-const WIDOX_PALETTE = [
-  "#ff4d8b", // pink
-  "#e8b94a", // ochre
-  "#1a3a3a", // teal
-  "#a4d4c5", // mint
-  "#b8a4ed", // lavender
-  "#ffb084", // peach
+const REVASY_PALETTE = [
+  "#4f46e5", // electric indigo
+  "#8b5cf6", // royal violet
+  "#10b981", // vibrant emerald
+  "#f59e0b", // warm amber
+  "#f43f5e", // vivid rose
+  "#06b6d4", // bright cyan
 ];
 
 export const Confetti: React.FC<ConfettiProps> = ({ trigger, onComplete }) => {
@@ -61,7 +61,7 @@ export const Confetti: React.FC<ConfettiProps> = ({ trigger, onComplete }) => {
         vx: Math.cos(angle) * speed * (0.8 + Math.random() * 0.6),
         vy: Math.sin(angle) * speed * (0.9 + Math.random() * 0.5),
         size: 5 + Math.random() * 6,
-        color: WIDOX_PALETTE[Math.floor(Math.random() * WIDOX_PALETTE.length)],
+        color: REVASY_PALETTE[Math.floor(Math.random() * REVASY_PALETTE.length)],
         rotation: Math.random() * 360,
         rotationSpeed: (Math.random() - 0.5) * 12,
         opacity: 1,

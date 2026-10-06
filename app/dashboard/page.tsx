@@ -91,11 +91,12 @@ export default function DashboardOverviewPage() {
       <header className="sticky top-0 z-30 bg-canvas/90 backdrop-blur-md border-b border-hairline px-4 md:px-8 py-3.5">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="font-display font-semibold text-2xl tracking-[-0.04em] text-ink">
-              widox<span className="text-brand-pink">.</span>
+            <Link href="/" className="font-display font-bold text-2xl tracking-[-0.03em] text-ink flex items-center gap-1 group">
+              <span>revasy</span>
+              <span className="w-2 h-2 rounded-full bg-indigo-600 inline-block group-hover:scale-125 transition-transform" />
             </Link>
-            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-pill text-[11px] font-bold uppercase tracking-wider bg-surface-card border border-hairline text-brand-teal">
-              <ShieldCheck className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-pill text-[11px] font-bold uppercase tracking-wider bg-indigo-50 border border-indigo-100 text-indigo-700">
+              <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
               SaaS Admin
             </span>
           </div>
