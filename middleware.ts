@@ -30,6 +30,13 @@ export default clerkMiddleware((auth, request) => {
   const response = NextResponse.next();
   Object.entries(securityHeaders).forEach(([k, v]) => response.headers.set(k, v));
 
+  // For public routes, cleanly strip any unexpected __clerk_handshake query param
+  if (isPublicRoute(request) && request.nextUrl.searchParams.has("__clerk_handshake")) {
+    const cleanUrl = new URL(request.url);
+    cleanUrl.searchParams.delete("__clerk_handshake");
+    return NextResponse.redirect(cleanUrl);
+  }
+
   // Legacy convenience redirects
   if (pathname === "/admin") return NextResponse.redirect(new URL("/dashboard", request.url));
   if (pathname === "/admin/login") return NextResponse.redirect(new URL("/login", request.url));

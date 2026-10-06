@@ -216,6 +216,9 @@ esbuild.buildSync({
     "process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": JSON.stringify(
       "pk_test_d29ydGh5LWNoaWNrZW4tNTY2NC5jbGVyay5hY2NvdW50cy5kZXYk"
     ),
+    "process.env.CLERK_SECRET_KEY": JSON.stringify(
+      "sk_test_FZfdszhS95aT3mKmdUycFXj230RbTTis7uQ7iJ2Qvt"
+    ),
     "process.env.NEXT_PUBLIC_APP_URL": JSON.stringify(
       "https://revasy.widox.in"
     ),
