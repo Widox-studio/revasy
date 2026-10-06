@@ -18,8 +18,9 @@ if (fs.existsSync(workerSourcePath)) {
 }
 
 console.log("=== 3. Bundling _worker.js for Cloudflare Pages ===");
+const bannerJs = 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);';
 execSync(
-  "npx esbuild .open-next/worker.js --bundle --platform=node --format=esm --target=es2022 --outfile=.open-next/assets/_worker.js --external:node:* --external:cloudflare:*",
+  `npx esbuild .open-next/worker.js --bundle --platform=node --format=esm --target=es2022 --outfile=.open-next/assets/_worker.js --external:node:* --external:cloudflare:* --banner:js="${bannerJs}" --define:process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY='"pk_test_d29ydGh5LWNoaWNrZW4tNTY2NC5jbGVyay5hY2NvdW50cy5kZXYk"' --define:process.env.NEXT_PUBLIC_APP_URL='"https://revasy.widox.in"'`,
   { stdio: "inherit" }
 );
 
@@ -34,8 +35,22 @@ if (fs.existsSync(workerOutPath)) {
     "export { worker_default as default };"
   );
 
-  // In the fetch handler, check env.ASSETS first for static assets
+  // In the fetch handler, sync env vars and check env.ASSETS for static assets
   const assetCheck = `
+      // Sync environment variables into process.env
+      if (env) {
+        for (const [k, v] of Object.entries(env)) {
+          if (typeof v === "string" && typeof process !== "undefined" && process?.env) {
+            process.env[k] = v;
+          }
+        }
+      }
+      if (typeof process !== "undefined" && process?.env) {
+        process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || "pk_test_d29ydGh5LWNoaWNrZW4tNTY2NC5jbGVyay5hY2NvdW50cy5kZXYk";
+        process.env.CLERK_SECRET_KEY = process.env.CLERK_SECRET_KEY || "sk_test_g743T3yB0QhX3zGqI5Z1WvL4kP9rS2vN8mM0jL3hK1";
+        process.env.NEXT_PUBLIC_APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://revasy.widox.in";
+      }
+
       // Serve static assets directly if available
       const url = new URL(request.url);
       if (env && env.ASSETS && (
@@ -52,6 +67,12 @@ if (fs.existsSync(workerOutPath)) {
   content = content.replace(
     /async\s+fetch\s*\(\s*request\s*,\s*env\s*,\s*ctx\s*\)\s*\{/g,
     `async fetch(request, env, ctx) {\n${assetCheck}\n    try {`
+  );
+
+  // Ensure runWithCloudflareRequestContext is awaited inside try/catch
+  content = content.replace(
+    /return runWithCloudflareRequestContext\(/g,
+    "return await runWithCloudflareRequestContext("
   );
 
   // Inject catch block before export
