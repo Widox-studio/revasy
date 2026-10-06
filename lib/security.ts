@@ -3,11 +3,11 @@
 const cspDirectives = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.com https://*.clerk.accounts.dev https://*.accounts.dev https://challenges.cloudflare.com https://*.protect.clerk.com",
-  "connect-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://*.accounts.dev https://*.clerk-telemetry.com https://clerk-telemetry.com https://*.protect.clerk.com:* https://img.clerk.com https://challenges.cloudflare.com",
-  "img-src 'self' data: blob: https://img.clerk.com https://*.clerk.com https://*.clerk.accounts.dev https://*.accounts.dev https://*.googleusercontent.com",
+  "connect-src 'self' https://*.clerk.com https://*.clerk.accounts.dev https://*.accounts.dev https://*.clerk-telemetry.com https://clerk-telemetry.com https://*.protect.clerk.com:* https://img.clerk.com https://challenges.cloudflare.com https://photon.komoot.io https://nominatim.openstreetmap.org",
+  "img-src 'self' data: blob: https://img.clerk.com https://*.clerk.com https://*.clerk.accounts.dev https://*.accounts.dev https://*.googleusercontent.com https://*.openstreetmap.org",
   "worker-src 'self' blob:",
   "style-src 'self' 'unsafe-inline'",
-  "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.com https://*.clerk.accounts.dev https://*.accounts.dev https://*.protect.clerk.com",
+  "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.com https://*.clerk.accounts.dev https://*.accounts.dev https://*.protect.clerk.com https://maps.google.com https://www.google.com",
   "form-action 'self' https://*.clerk.com https://*.clerk.accounts.dev https://*.accounts.dev https://accounts.google.com",
 ];
 

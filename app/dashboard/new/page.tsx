@@ -25,6 +25,7 @@ import {
   Wrench,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { GooglePlaceIdFinder } from "@/components/maps/GooglePlaceIdFinder";
 
 const CATEGORIES = [
   "Cafe & Restaurant",
@@ -383,11 +384,31 @@ export default function RegisterBusinessPage() {
               />
             </div>
 
-            {/* Google Review URL */}
+            {/* Google Review URL with Interactive Map & Place ID Finder */}
             <div className="space-y-1.5">
-              <label htmlFor="biz-google-url" className="block text-xs font-semibold uppercase tracking-wider text-muted">
-                Google Review URL *
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="biz-google-url" className="block text-xs font-semibold uppercase tracking-wider text-muted">
+                  Google Review URL *
+                </label>
+                <GooglePlaceIdFinder
+                  currentUrl={googleReviewUrl}
+                  initialBusinessName={name}
+                  onSelect={(data) => {
+                    setGoogleReviewUrl(data.googleReviewUrl);
+                    if ((!name.trim() || name === "My Business") && data.businessName) {
+                      handleNameChange(data.businessName);
+                    }
+                    if (data.category) {
+                      const matchedCat = CATEGORIES.find(
+                        (c) =>
+                          c.toLowerCase().includes(data.category!.toLowerCase()) ||
+                          data.category!.toLowerCase().includes(c.toLowerCase())
+                      );
+                      if (matchedCat) handleCategoryChange(matchedCat);
+                    }
+                  }}
+                />
+              </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-muted">
                   <LinkIcon className="w-4 h-4" />
@@ -403,7 +424,7 @@ export default function RegisterBusinessPage() {
                 />
               </div>
               <p className="text-[11px] text-muted-soft">
-                Found in your Google Business Profile &ldquo;Ask for reviews&rdquo; section.
+                Found in your Google Business Profile &ldquo;Ask for reviews&rdquo; section, or click the map button above to search and pin automatically.
               </p>
             </div>
 

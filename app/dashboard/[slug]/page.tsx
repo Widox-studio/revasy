@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Toast } from "@/components/ui/Toast";
+import { GooglePlaceIdFinder } from "@/components/maps/GooglePlaceIdFinder";
 import { UserButton } from "@clerk/nextjs";
 import { Business } from "@/lib/business-store";
 import { generateQrDataUrl } from "@/lib/qr";
@@ -712,9 +713,22 @@ export default function BusinessDetailPage() {
             </div>
 
             <div className="space-y-1.5">
-              <label htmlFor="edit-google" className="block text-xs font-semibold uppercase tracking-wider text-muted">
-                Google Review URL
-              </label>
+              <div className="flex items-center justify-between">
+                <label htmlFor="edit-google" className="block text-xs font-semibold uppercase tracking-wider text-muted">
+                  Google Review URL
+                </label>
+                <GooglePlaceIdFinder
+                  currentUrl={editGoogleUrl}
+                  initialBusinessName={editName}
+                  onSelect={(data) => {
+                    setEditGoogleUrl(data.googleReviewUrl);
+                    if (data.businessName && !editName) {
+                      setEditName(data.businessName);
+                    }
+                    showToast("✓ Updated Google Review URL from map picker!");
+                  }}
+                />
+              </div>
               <input
                 id="edit-google"
                 type="url"
