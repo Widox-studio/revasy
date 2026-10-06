@@ -28,7 +28,7 @@ esbuild.buildSync({
   outfile: path.join(".open-next", "assets", "_worker.js"),
   external: ["node:*", "cloudflare:*"],
   banner: {
-    js: 'import { createRequire } from "node:module"; const require = createRequire(import.meta.url);',
+    js: 'import { createRequire } from "node:module"; const require = createRequire("/worker.js");',
   },
   define: {
     "process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY": JSON.stringify(
