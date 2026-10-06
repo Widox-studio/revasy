@@ -19,7 +19,7 @@
     "ownerEmail": "owner@cocovacafe.com",
     "createdAt": "2026-10-05T15:54:08.723Z",
     "stats": {
-      "totalReviewsGenerated": 60,
+      "totalReviewsGenerated": 63,
       "totalRepliesGenerated": 18
     }
   },
@@ -973,6 +973,196 @@
     ],
     "ownerEmail": "owner@cocovacafe.com",
     "createdAt": "2026-10-06T16:26:01.977Z",
+    "stats": {
+      "totalReviewsGenerated": 0,
+      "totalRepliesGenerated": 0
+    }
+  },
+  {
+    "id": "biz_1791304325071",
+    "slug": "spice-hub-5052",
+    "name": "Spice Hub Gourmet",
+    "tagline": "Authentic Indian Curries & Tandoor",
+    "category": "Cafe & Restaurant",
+    "description": "Award-winning traditional cuisine with modern hospitality.",
+    "googleReviewUrl": "https://search.google.com/local/writereview?placeid=ChIJspicehub_demo",
+    "logoUrl": "",
+    "accentColor": "peach",
+    "customPrompts": [
+      "Butter chicken was heavenly",
+      "Warm garlic naan",
+      "Attentive staff"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-06T16:32:05.071Z",
+    "stats": {
+      "totalReviewsGenerated": 1,
+      "totalRepliesGenerated": 1
+    }
+  },
+  {
+    "id": "biz_1791304501566",
+    "slug": "spice-hub-1540",
+    "name": "Spice Hub Gourmet",
+    "tagline": "Authentic Indian Curries & Tandoor",
+    "category": "Cafe & Restaurant",
+    "description": "Award-winning traditional cuisine with modern hospitality.",
+    "googleReviewUrl": "https://search.google.com/local/writereview?placeid=ChIJspicehub_demo",
+    "logoUrl": "",
+    "accentColor": "peach",
+    "customPrompts": [
+      "Butter chicken was heavenly",
+      "Warm garlic naan",
+      "Attentive staff"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-06T16:35:01.566Z",
+    "stats": {
+      "totalReviewsGenerated": 1,
+      "totalRepliesGenerated": 1
+    }
+  },
+  {
+    "id": "biz_1791304502083",
+    "slug": "ux-test-teal-2062",
+    "name": "Test Business Teal",
+    "tagline": "Testing teal accent theme",
+    "category": "Cafe & Restaurant",
+    "description": "A test business with teal accent color.",
+    "googleReviewUrl": "https://g.co/review/test-teal",
+    "logoUrl": "",
+    "accentColor": "teal",
+    "customPrompts": [
+      "Great service",
+      "Nice ambience"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-06T16:35:02.083Z",
+    "stats": {
+      "totalReviewsGenerated": 0,
+      "totalRepliesGenerated": 0
+    }
+  },
+  {
+    "id": "biz_1791304502107",
+    "slug": "ux-test-pink-2088",
+    "name": "Test Business Pink",
+    "tagline": "Testing pink accent theme",
+    "category": "Cafe & Restaurant",
+    "description": "A test business with pink accent color.",
+    "googleReviewUrl": "https://g.co/review/test-pink",
+    "logoUrl": "",
+    "accentColor": "pink",
+    "customPrompts": [
+      "Great service",
+      "Nice ambience"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-06T16:35:02.107Z",
+    "stats": {
+      "totalReviewsGenerated": 0,
+      "totalRepliesGenerated": 0
+    }
+  },
+  {
+    "id": "biz_1791304502132",
+    "slug": "ux-test-peach-2114",
+    "name": "Test Business Peach",
+    "tagline": "Testing peach accent theme",
+    "category": "Cafe & Restaurant",
+    "description": "A test business with peach accent color.",
+    "googleReviewUrl": "https://g.co/review/test-peach",
+    "logoUrl": "",
+    "accentColor": "peach",
+    "customPrompts": [
+      "Great service",
+      "Nice ambience"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-06T16:35:02.132Z",
+    "stats": {
+      "totalReviewsGenerated": 0,
+      "totalRepliesGenerated": 0
+    }
+  },
+  {
+    "id": "biz_1791304502156",
+    "slug": "ux-test-lavender-2138",
+    "name": "Test Business Lavender",
+    "tagline": "Testing lavender accent theme",
+    "category": "Cafe & Restaurant",
+    "description": "A test business with lavender accent color.",
+    "googleReviewUrl": "https://g.co/review/test-lavender",
+    "logoUrl": "",
+    "accentColor": "lavender",
+    "customPrompts": [
+      "Great service",
+      "Nice ambience"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-06T16:35:02.156Z",
+    "stats": {
+      "totalReviewsGenerated": 0,
+      "totalRepliesGenerated": 0
+    }
+  },
+  {
+    "id": "biz_1791304502180",
+    "slug": "ux-test-ochre-2163",
+    "name": "Test Business Ochre",
+    "tagline": "Testing ochre accent theme",
+    "category": "Cafe & Restaurant",
+    "description": "A test business with ochre accent color.",
+    "googleReviewUrl": "https://g.co/review/test-ochre",
+    "logoUrl": "",
+    "accentColor": "ochre",
+    "customPrompts": [
+      "Great service",
+      "Nice ambience"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-06T16:35:02.180Z",
+    "stats": {
+      "totalReviewsGenerated": 0,
+      "totalRepliesGenerated": 0
+    }
+  },
+  {
+    "id": "biz_1791304502203",
+    "slug": "ux-test-mint-2185",
+    "name": "Test Business Mint",
+    "tagline": "Testing mint accent theme",
+    "category": "Cafe & Restaurant",
+    "description": "A test business with mint accent color.",
+    "googleReviewUrl": "https://g.co/review/test-mint",
+    "logoUrl": "",
+    "accentColor": "mint",
+    "customPrompts": [
+      "Great service",
+      "Nice ambience"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-06T16:35:02.203Z",
+    "stats": {
+      "totalReviewsGenerated": 0,
+      "totalRepliesGenerated": 0
+    }
+  },
+  {
+    "id": "biz_1791304502419",
+    "slug": "long-name-biz-2405",
+    "name": "A Very Long Business Name That Might Overflow UI Elements And Should Still Render Gracefully",
+    "tagline": "This is an extremely long tagline designed to test text overflow and wrapping in all UI components",
+    "category": "Salon & Wellness",
+    "description": "Testing edge case with maximum length business name and description text to ensure UI layout does not break.",
+    "googleReviewUrl": "https://g.co/review/longname",
+    "logoUrl": "",
+    "accentColor": "teal",
+    "customPrompts": [
+      "Great service"
+    ],
+    "ownerEmail": "owner@cocovacafe.com",
+    "createdAt": "2026-10-06T16:35:02.419Z",
     "stats": {
       "totalReviewsGenerated": 0,
       "totalRepliesGenerated": 0

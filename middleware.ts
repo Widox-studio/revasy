@@ -25,17 +25,12 @@ const isPublicRoute = createRouteMatcher([
   "/favicon.ico",
 ]);
 
-export default clerkMiddleware((auth, request) => {
+import type { NextRequest, NextFetchEvent } from "next/server";
+
+const clerkHandler = clerkMiddleware((auth, request) => {
   const { pathname } = request.nextUrl;
   const response = NextResponse.next();
   Object.entries(securityHeaders).forEach(([k, v]) => response.headers.set(k, v));
-
-  // For public routes, cleanly strip any unexpected __clerk_handshake query param
-  if (isPublicRoute(request) && request.nextUrl.searchParams.has("__clerk_handshake")) {
-    const cleanUrl = new URL(request.url);
-    cleanUrl.searchParams.delete("__clerk_handshake");
-    return NextResponse.redirect(cleanUrl);
-  }
 
   // Legacy convenience redirects
   if (pathname === "/admin") return NextResponse.redirect(new URL("/dashboard", request.url));
@@ -65,6 +60,24 @@ export default clerkMiddleware((auth, request) => {
 
   return response;
 });
+
+export default async function middleware(request: NextRequest, event: NextFetchEvent) {
+  // If handshake query param exists on public customer-facing routes, strip it immediately to prevent cross-origin Clerk handshake crashes
+  if (isPublicRoute(request) && request.nextUrl.searchParams.has("__clerk_handshake")) {
+    const cleanUrl = new URL(request.url);
+    cleanUrl.searchParams.delete("__clerk_handshake");
+    return NextResponse.redirect(cleanUrl);
+  }
+
+  try {
+    return await clerkHandler(request, event);
+  } catch (err) {
+    console.warn("Clerk middleware warning:", err);
+    const response = NextResponse.next();
+    Object.entries(securityHeaders).forEach(([k, v]) => response.headers.set(k, v));
+    return response;
+  }
+}
 
 export const config = {
   matcher: [
