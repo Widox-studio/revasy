@@ -50,7 +50,12 @@ export default function LoginPage() {
         throw new Error(data.error || "Login failed");
       }
 
-      router.push("/dashboard");
+      const targetUrl =
+        typeof window !== "undefined"
+          ? new URLSearchParams(window.location.search).get("redirect_url") || "/dashboard"
+          : "/dashboard";
+
+      router.push(targetUrl);
       router.refresh();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Invalid credentials";
@@ -66,6 +71,11 @@ export default function LoginPage() {
     setIsLoading(true);
     setErrorMessage(null);
 
+    const targetUrl =
+      typeof window !== "undefined"
+        ? new URLSearchParams(window.location.search).get("redirect_url") || "/dashboard"
+        : "/dashboard";
+
     try {
       const res = await fetch("/api/admin/login", {
         method: "POST",
@@ -74,13 +84,13 @@ export default function LoginPage() {
       });
 
       if (res.ok) {
-        router.push("/dashboard");
+        router.push(targetUrl);
         router.refresh();
       } else {
-        router.push("/dashboard");
+        router.push(targetUrl);
       }
     } catch {
-      router.push("/dashboard");
+      router.push(targetUrl);
     } finally {
       setIsLoading(false);
     }

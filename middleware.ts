@@ -40,7 +40,18 @@ export default clerkMiddleware((auth, request) => {
     request.cookies.get("cocova_session");
 
   if (!isPublicRoute(request) && !adminSessionCookie?.value) {
-    auth().protect();
+    try {
+      const clerkAuth = auth();
+      if (!clerkAuth?.userId) {
+        const loginUrl = new URL("/login", request.url);
+        loginUrl.searchParams.set("redirect_url", pathname);
+        return NextResponse.redirect(loginUrl);
+      }
+    } catch {
+      const loginUrl = new URL("/login", request.url);
+      loginUrl.searchParams.set("redirect_url", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return response;

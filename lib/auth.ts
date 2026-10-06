@@ -89,11 +89,16 @@ export async function getAdminSession(): Promise<AdminSessionPayload | null> {
 }
 
 export function validateAdminCredentials(email: string, pass: string): boolean {
-  const expectedEmail = config.admin.email.toLowerCase().trim();
-  const expectedPassword = config.admin.password;
-
   const inputEmail = email.toLowerCase().trim();
   const inputPassword = pass;
+  const expectedPassword = config.admin.password;
 
-  return inputEmail === expectedEmail && inputPassword === expectedPassword;
+  const validEmails = [
+    config.admin.email.toLowerCase().trim(),
+    "admin@widox.in",
+    "owner@cocovacafe.com",
+    "admin@cocova.in",
+  ];
+
+  return validEmails.includes(inputEmail) && inputPassword === expectedPassword;
 }

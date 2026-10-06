@@ -46,6 +46,7 @@ const config: Config = {
       },
       fontFamily: {
         display: [
+          "var(--font-bricolage)",
           '"Bricolage Grotesque"',
           "Inter",
           "-apple-system",
@@ -53,6 +54,16 @@ const config: Config = {
           "sans-serif",
         ],
         body: [
+          "var(--font-inter)",
+          "Inter",
+          "-apple-system",
+          "BlinkMacSystemFont",
+          "Segoe UI",
+          "Roboto",
+          "sans-serif",
+        ],
+        sans: [
+          "var(--font-inter)",
           "Inter",
           "-apple-system",
           "BlinkMacSystemFont",
