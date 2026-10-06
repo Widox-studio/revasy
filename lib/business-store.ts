@@ -393,6 +393,21 @@ export async function saveFeedbackAsync(feedback: {
       console.warn("D1 review_logs save error:", e);
     }
   }
+
+  const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "38d1ceb6731de305dc93daf3659e371c";
+  const cfApiToken = process.env.CLOUDFLARE_API_TOKEN;
+  if (cfAccountId && cfApiToken) {
+    try {
+      const fullText = feedback.contactInfo ? `${feedback.customerText}\n[Contact: ${feedback.contactInfo}]` : feedback.customerText;
+      const sql = `INSERT INTO review_logs (id, business_id, rating, review_text, created_at) VALUES ('log_${Date.now()}_${Math.random().toString(36).substring(2, 7)}', '${feedback.businessSlug.replace(/'/g, "''")}', ${feedback.rating}, '${fullText.replace(/'/g, "''")}', '${new Date().toISOString()}');`;
+      await fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/d1/database/52df4dc3-0470-4abb-a41d-c1d9c534defc/query`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${cfApiToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ sql })
+      }).catch(() => {});
+    } catch {}
+  }
+
   return true;
 }
 

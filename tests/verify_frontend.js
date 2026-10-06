@@ -63,6 +63,21 @@ async function runTests() {
     const badReviewData = await badReviewRes.json();
     assert(badReviewData.success, "Low rating handles private feedback seamlessly");
 
+    // 6. Private feedback submission API
+    const fbRes = await fetch(`${baseUrl}/api/feedback`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        businessSlug: 'cocova',
+        rating: 2,
+        customerText: 'Service was slower than usual today.',
+        contactInfo: 'guest@example.com'
+      })
+    });
+    assert(fbRes.status === 200, "Private feedback submission API returns 200");
+    const fbData = await fbRes.json();
+    assert(fbData.success === true, "Private feedback saved and routed to management");
+
 
     console.log(`\n========================================`);
     console.log(`QA VERIFICATION COMPLETE: ${passed} PASSED, ${failed} FAILED`);

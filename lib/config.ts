@@ -23,7 +23,7 @@ export const config = {
   rateLimits: {
     reviewGenerate: {
       windowMs: 60 * 1000, // 1 minute
-      max: 6, // max 6 reviews per minute per IP
+      max: 60, // max 60 reviews per minute per IP
     },
     adminReplyGenerate: {
       windowMs: 60 * 1000,

@@ -2,6 +2,14 @@ const { execSync } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
+if (!fs.existsSync(path.join(".next", "standalone"))) {
+  console.log("=== 0. Building Next.js Standalone ===");
+  execSync("npx next build", {
+    stdio: "inherit",
+    env: { ...process.env, NEXT_PRIVATE_STANDALONE: "true" },
+  });
+}
+
 console.log("=== 1. Building OpenNext Bundle ===");
 execSync("npx opennextjs-cloudflare build --skipNextBuild --dangerouslyUseUnsupportedNextVersion", {
   stdio: "inherit",
