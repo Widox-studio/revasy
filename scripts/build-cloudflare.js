@@ -7,44 +7,75 @@ execSync("npx opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion
   stdio: "inherit",
 });
 
-console.log("=== 2. Bundling _worker.js for Cloudflare Pages ===");
+console.log("=== 2. Stripping Durable Objects from worker.js ===");
+const workerSourcePath = path.join(".open-next", "worker.js");
+if (fs.existsSync(workerSourcePath)) {
+  let src = fs.readFileSync(workerSourcePath, "utf8");
+  src = src.replace(/export\s*\{\s*DOQueueHandler\s*\}\s*from\s*["'].*?["'];?/g, "");
+  src = src.replace(/export\s*\{\s*DOShardedTagCache\s*\}\s*from\s*["'].*?["'];?/g, "");
+  src = src.replace(/export\s*\{\s*BucketCachePurge\s*\}\s*from\s*["'].*?["'];?/g, "");
+  fs.writeFileSync(workerSourcePath, src, "utf8");
+}
+
+console.log("=== 3. Bundling _worker.js for Cloudflare Pages ===");
 execSync(
-  "npx esbuild .open-next/worker.js --bundle --platform=node --format=esm --target=es2022 --outfile=.open-next/assets/_worker.js --packages=external",
+  "npx esbuild .open-next/worker.js --bundle --platform=node --format=esm --target=es2022 --outfile=.open-next/assets/_worker.js --external:node:* --external:cloudflare:*",
   { stdio: "inherit" }
 );
 
-console.log("=== 3. Injecting safety wrapper and _routes.json ===");
-const workerPath = path.join(".open-next", "assets", "_worker.js");
-if (fs.existsSync(workerPath)) {
-  let content = fs.readFileSync(workerPath, "utf8");
-  // Inject try-catch fallback for fetch handler
+console.log("=== 4. Cleaning exports and injecting safety wrapper ===");
+const workerOutPath = path.join(".open-next", "assets", "_worker.js");
+if (fs.existsSync(workerOutPath)) {
+  let content = fs.readFileSync(workerOutPath, "utf8");
+
+  // Ensure only worker_default is exported, no Durable Objects
   content = content.replace(
-    /var worker_default = \{\s*async fetch\(request, env, ctx\) \{/g,
-    `var worker_default = {
-  async fetch(request, env, ctx) {
-    try {`
+    /export\s*\{[^}]*worker_default\s+as\s+default[^}]*\};/g,
+    "export { worker_default as default };"
   );
+
+  // In the fetch handler, check env.ASSETS first for static assets
+  const assetCheck = `
+      // Serve static assets directly if available
+      const url = new URL(request.url);
+      if (env && env.ASSETS && (
+        url.pathname.startsWith("/_next/static/") ||
+        url.pathname === "/favicon.ico" ||
+        url.pathname === "/icon-192.png" ||
+        url.pathname === "/icon-512.png" ||
+        url.pathname.startsWith("/uploads/")
+      )) {
+        return await env.ASSETS.fetch(request);
+      }
+  `;
+
   content = content.replace(
-    /return handler4\(reqOrResp, env, ctx, request\.signal\);\s*\}\);\s*\}\s*\};/g,
-    `return await handler4(reqOrResp, env, ctx, request.signal);
-      });
-    } catch (err) {
-      console.error("[Worker Error]", err);
-      // Fallback to static assets if handler fails
+    /async\s+fetch\s*\(\s*request\s*,\s*env\s*,\s*ctx\s*\)\s*\{/g,
+    `async fetch(request, env, ctx) {\n${assetCheck}\n    try {`
+  );
+
+  // Inject catch block before export
+  content = content.replace(
+    /\}\s*\n\};\s*\nexport\s*\{\s*worker_default\s+as\s+default\s*\};/g,
+    `    } catch (err) {
+      console.error("[Pages Worker Unhandled Error]:", err);
       if (env && env.ASSETS) {
         try { return await env.ASSETS.fetch(request); } catch (_) {}
       }
-      return new Response("Application Error: " + (err.stack || err.message), {
+      return new Response("App Error: " + (err.stack || err.message), {
         status: 500,
-        headers: { "Content-Type": "text/plain; charset=utf-8" },
+        headers: { "Content-Type": "text/plain; charset=utf-8" }
       });
     }
   }
-};`
+};
+export { worker_default as default };`
   );
-  fs.writeFileSync(workerPath, content, "utf8");
+
+  fs.writeFileSync(workerOutPath, content, "utf8");
 }
 
+console.log("=== 5. Writing _routes.json ===");
 const routesJson = {
   version: 1,
   include: ["/*"],
