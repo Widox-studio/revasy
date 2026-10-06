@@ -1,6 +1,6 @@
 
 import { notFound } from "next/navigation";
-import { getBusinessBySlug } from "@/lib/business-store";
+import { getBusinessBySlugAsync } from "@/lib/business-store";
 import { BusinessReviewClient } from "@/components/review/BusinessReviewClient";
 import type { Metadata } from "next";
 
@@ -11,7 +11,7 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const business = getBusinessBySlug(params.slug);
+  const business = await getBusinessBySlugAsync(params.slug);
   if (!business) {
     return {
       title: "Business Not Found | Revasy Review Assistant",
@@ -58,7 +58,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function BusinessReviewPage({ params }: PageProps) {
-  const business = getBusinessBySlug(params.slug);
+  const business = await getBusinessBySlugAsync(params.slug);
 
   if (!business) {
     notFound();

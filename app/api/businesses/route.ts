@@ -1,14 +1,14 @@
 
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
-import { getBusinessesByOwner, saveBusiness, getBusinessBySlug, Business } from "@/lib/business-store";
+import { getBusinessesByOwnerAsync, saveBusiness, getBusinessBySlugAsync, Business } from "@/lib/business-store";
 import { BusinessCreateInputSchema, sanitizeText } from "@/lib/validation";
 
 export async function GET(req: Request) {
   try {
     const session = await getAdminSession();
     const ownerEmail = session?.email || "owner@cocovacafe.com";
-    const businesses = getBusinessesByOwner(ownerEmail);
+    const businesses = await getBusinessesByOwnerAsync(ownerEmail);
     return NextResponse.json({ success: true, businesses });
   } catch (error) {
     console.error("Error fetching businesses:", error);
@@ -37,7 +37,7 @@ export async function POST(req: Request) {
     const data = parseResult.data;
 
     // Check if slug is taken
-    const existing = getBusinessBySlug(data.slug);
+    const existing = await getBusinessBySlugAsync(data.slug);
     if (existing) {
       return NextResponse.json(
         { error: `URL slug "${data.slug}" is already taken. Please choose a different slug.` },

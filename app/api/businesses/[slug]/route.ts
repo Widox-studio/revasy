@@ -1,6 +1,6 @@
 
 import { NextResponse } from "next/server";
-import { getBusinessBySlug, saveBusiness } from "@/lib/business-store";
+import { getBusinessBySlugAsync, saveBusiness } from "@/lib/business-store";
 import { sanitizeText } from "@/lib/validation";
 
 interface RouteParams {
@@ -12,7 +12,7 @@ interface RouteParams {
 export async function GET(req: Request, { params }: RouteParams) {
   try {
     const { slug } = params;
-    const business = getBusinessBySlug(slug);
+    const business = await getBusinessBySlugAsync(slug);
 
     if (!business) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
@@ -28,7 +28,7 @@ export async function GET(req: Request, { params }: RouteParams) {
 export async function PUT(req: Request, { params }: RouteParams) {
   try {
     const { slug } = params;
-    const existing = getBusinessBySlug(slug);
+    const existing = await getBusinessBySlugAsync(slug);
 
     if (!existing) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });

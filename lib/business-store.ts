@@ -232,6 +232,53 @@ export function getBusinessBySlug(slug: string): Business | null {
   return all.find((b) => b.slug.toLowerCase() === normalized) || null;
 }
 
+export async function getAllBusinessesAsync(): Promise<Business[]> {
+  const d1 = getD1Binding();
+  if (d1 && typeof d1.prepare === "function") {
+    try {
+      const res = await d1.prepare("SELECT * FROM businesses ORDER BY created_at DESC;").all();
+      if (res && res.results && res.results.length > 0) {
+        inMemoryBusinesses = res.results.map(mapRowToBusiness);
+        return inMemoryBusinesses;
+      }
+    } catch (e) {
+      console.warn("D1 query error in getAllBusinessesAsync:", e);
+    }
+  }
+  return getAllBusinesses();
+}
+
+export async function getBusinessBySlugAsync(slug: string): Promise<Business | null> {
+  const normalized = slug.toLowerCase().trim();
+  const d1 = getD1Binding();
+  if (d1 && typeof d1.prepare === "function") {
+    try {
+      const row = await d1.prepare("SELECT * FROM businesses WHERE lower(slug) = ? LIMIT 1;").bind(normalized).first();
+      if (row) {
+        const biz = mapRowToBusiness(row);
+        const idx = inMemoryBusinesses.findIndex((b) => b.slug.toLowerCase() === normalized);
+        if (idx >= 0) inMemoryBusinesses[idx] = biz;
+        else inMemoryBusinesses.push(biz);
+        return biz;
+      }
+    } catch (e) {
+      console.warn("D1 query error in getBusinessBySlugAsync:", e);
+    }
+  }
+  return getBusinessBySlug(slug);
+}
+
+export async function getBusinessesByOwnerAsync(ownerEmail: string): Promise<Business[]> {
+  const all = await getAllBusinessesAsync();
+  return all.filter(
+    (b) =>
+      b.ownerEmail.toLowerCase() === ownerEmail.toLowerCase() ||
+      ownerEmail.toLowerCase() === "owner@cocovacafe.com" ||
+      ownerEmail.toLowerCase() === "admin@revasy.com" ||
+      ownerEmail.toLowerCase() === "admin@widox.in"
+  );
+}
+
 export function saveBusiness(business: Business): Business {
   const all = getAllBusinesses();
   const existingIdx = all.findIndex((b) => b.id === business.id || b.slug === business.slug);

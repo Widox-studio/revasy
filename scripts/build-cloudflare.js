@@ -53,8 +53,10 @@ if (fs.existsSync(workerOutPath)) {
 
   // In the fetch handler, sync env vars and check env.ASSETS for static assets
   const assetCheck = `
-      // Sync environment variables into process.env
+      // Sync environment variables and Cloudflare bindings
       if (env) {
+        if (env.DB) globalThis.DB = env.DB;
+        if (env.AI) globalThis.AI = env.AI;
         for (const [k, v] of Object.entries(env)) {
           if (typeof v === "string" && typeof process !== "undefined" && process?.env) {
             process.env[k] = v;
