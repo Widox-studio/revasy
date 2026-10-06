@@ -9,7 +9,7 @@
     "lint": "next lint",
     "test": "node tests/verify_saas.js",
     "test:all": "node tests/verify_saas.js && node tests/verify_ux_edge_cases.js && node tests/verify_frontend.js",
-    "build:cloudflare": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion && esbuild .open-next/worker.js --bundle --platform=node --format=esm --target=es2022 --outfile=.open-next/assets/_worker.js --packages=external",
+    "build:cloudflare": "node scripts/build-cloudflare.js",
     "build:opennext": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion"
   },
   "dependencies": {
