@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { notFound } from "next/navigation";
 import { getBusinessBySlug } from "@/lib/business-store";
 import { BusinessReviewClient } from "@/components/review/BusinessReviewClient";

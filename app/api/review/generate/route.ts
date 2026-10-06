@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { NextResponse } from "next/server";
 import { config } from "@/lib/config";
 import { ReviewGenerateInputSchema, sanitizeText } from "@/lib/validation";

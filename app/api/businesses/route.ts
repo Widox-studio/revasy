@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/auth";
 import { getBusinessesByOwner, saveBusiness, getBusinessBySlug, Business } from "@/lib/business-store";

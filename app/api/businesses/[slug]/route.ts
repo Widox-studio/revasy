@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { NextResponse } from "next/server";
 import { getBusinessBySlug, saveBusiness } from "@/lib/business-store";
 import { sanitizeText } from "@/lib/validation";

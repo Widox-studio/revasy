@@ -1,3 +1,5 @@
+export const runtime = "edge";
+
 import { NextResponse } from "next/server";
 import { AdminReplyGenerateInputSchema, sanitizeText } from "@/lib/validation";
 import { generateOwnerReplyDrafts } from "@/lib/openai";
