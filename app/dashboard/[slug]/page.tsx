@@ -28,6 +28,7 @@ import { Toast } from "@/components/ui/Toast";
 import { UserButton } from "@clerk/nextjs";
 import { Business } from "@/lib/business-store";
 import { generateQrDataUrl } from "@/lib/qr";
+import { getAccentTheme } from "@/lib/theme";
 
 export default function BusinessDetailPage() {
   const params = useParams();
@@ -35,6 +36,7 @@ export default function BusinessDetailPage() {
   const slug = params?.slug as string;
 
   const [business, setBusiness] = useState<Business | null>(null);
+  const theme = getAccentTheme(business?.accentColor);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"replies" | "qr" | "settings">("replies");
 
@@ -552,7 +554,7 @@ export default function BusinessDetailPage() {
 
                 {/* Printable Table Tent Card */}
                 <div className="printable-stand bg-gradient-to-b from-white to-surface-card p-7 sm:p-8 rounded-3xl border-2 border-hairline shadow-floating text-center max-w-xs mx-auto space-y-4 relative overflow-hidden">
-                  <div className="absolute top-0 inset-x-0 h-2 bg-brand-teal" />
+                  <div className={`absolute top-0 inset-x-0 h-2 ${theme.bar}`} />
 
                   {/* Brand Logo & Name */}
                   <div className="space-y-1.5 pt-1">
@@ -563,10 +565,10 @@ export default function BusinessDetailPage() {
                         <Building2 className="w-7 h-7 text-muted" />
                       )}
                     </div>
-                    <h3 className="font-display font-bold text-xl text-ink leading-tight">
+                    <h3 className="font-display font-bold text-xl text-ink leading-tight break-words">
                       {business.name}
                     </h3>
-                    <p className="text-xs text-muted font-medium line-clamp-1">
+                    <p className="text-xs text-muted font-medium line-clamp-1 break-words">
                       {business.tagline || "We appreciate your feedback!"}
                     </p>
                   </div>

@@ -103,6 +103,21 @@ const config: Config = {
     },
   },
   plugins: [],
+  safelist: [
+    {
+      pattern: /(bg|text|border|ring)-brand-(teal|pink|peach|mint|lavender|ochre)(\/[0-9]+)?/,
+      variants: ["hover", "focus", "group-hover", "active"],
+    },
+    "text-amber-800",
+    "text-amber-900",
+    "text-emerald-800",
+    "text-emerald-900",
+    "text-purple-900",
+    "text-amber-700",
+    "text-emerald-700",
+    "text-purple-700",
+    "break-words",
+  ],
 };
 
 export default config;

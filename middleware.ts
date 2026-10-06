@@ -1,10 +1,12 @@
 import { NextResponse } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { securityHeaders } from "./lib/security";
+import { config as appConfig } from "./lib/config";
 
 const isPublicRoute = createRouteMatcher([
   "/",
   "/b/(.*)",
+  "/b/:path*",
   "/review",
   "/login(.*)",
   "/sign-in(.*)",
@@ -15,6 +17,10 @@ const isPublicRoute = createRouteMatcher([
   "/api/admin/login",
   "/api/admin/logout",
   "/api/admin/reply/generate",
+  "/manifest.webmanifest",
+  "/robots.txt",
+  "/sitemap.xml",
+  "/favicon.ico",
 ]);
 
 export default clerkMiddleware((auth, request) => {
@@ -27,7 +33,13 @@ export default clerkMiddleware((auth, request) => {
   if (pathname === "/admin/login") return NextResponse.redirect(new URL("/login", request.url));
   if (pathname === "/review") return NextResponse.redirect(new URL("/b/cocova", request.url));
 
-  if (!isPublicRoute(request)) {
+  // Require authentication for private routes (Clerk auth or demo admin session)
+  const adminSessionCookie =
+    request.cookies.get("admin_session_token") ||
+    request.cookies.get(appConfig.admin.cookieName) ||
+    request.cookies.get("cocova_session");
+
+  if (!isPublicRoute(request) && !adminSessionCookie?.value) {
     auth().protect();
   }
 
@@ -37,9 +49,10 @@ export default clerkMiddleware((auth, request) => {
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest|txt|xml)).*)",
     // Always run for API routes
     "/(api|trpc)(.*)",
-    "/__clerk/:path*",
+    // Always run for Clerk-specific frontend API routes
+    "/__clerk/(.*)",
   ],
 };

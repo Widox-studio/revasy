@@ -27,6 +27,7 @@ import { Toast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
 import { Confetti } from "@/components/ui/Confetti";
 import { Business } from "@/lib/business-store";
+import { getAccentTheme } from "@/lib/theme";
 
 interface ReviewDrafts {
   natural: string;
@@ -41,6 +42,8 @@ const LOADING_PHRASES = [
 ];
 
 export function BusinessReviewClient({ business }: { business: Business }) {
+  const theme = getAccentTheme(business.accentColor);
+
   // Flow State
   const [currentStep, setCurrentStep] = useState<"input" | "results">("input");
   const [rating, setRating] = useState<number>(5);
@@ -229,7 +232,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
             {business.name}
           </span>
 
-          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-surface-card border border-hairline text-brand-teal px-2.5 py-0.5 rounded-pill">
+          <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-pill border ${theme.badge}`}>
             <Check className="w-3 h-3 text-brand-mint" />
             Verified
           </span>
@@ -248,7 +251,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
         </div>
         <div className="w-full bg-hairline rounded-full h-1.5 overflow-hidden">
           <div
-            className="bg-brand-teal h-full transition-all duration-300"
+            className={`${theme.bar} h-full transition-all duration-300`}
             style={{ width: currentStep === "input" ? "50%" : "100%" }}
           />
         </div>
@@ -266,7 +269,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
               <h3 className="font-display font-semibold text-xl text-ink">
                 Generating Review Drafts
               </h3>
-              <p className="text-xs text-brand-teal font-medium transition-all">
+              <p className={`text-xs ${theme.text} font-medium transition-all`}>
                 {LOADING_PHRASES[loadingPhraseIndex]}
               </p>
             </div>
@@ -299,10 +302,10 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                 )}
               </div>
               <div>
-                <h1 className="font-display font-semibold text-2xl text-ink tracking-[-0.02em]">
+                <h1 className="font-display font-semibold text-2xl text-ink tracking-[-0.02em] break-words">
                   {business.name}
                 </h1>
-                <p className="text-xs text-muted max-w-xs mx-auto">
+                <p className="text-xs text-muted max-w-xs mx-auto break-words">
                   {business.tagline || business.category}
                 </p>
               </div>
@@ -336,7 +339,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                   rows={4}
                   maxLength={1000}
                   placeholder={`e.g. Loved the friendly service at ${business.name}! Everything was prompt and well handled.`}
-                  className="w-full text-sm text-ink p-3.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/60 resize-none transition-colors"
+                  className={`w-full text-sm text-ink p-3.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 ${theme.ring} bg-surface-soft/60 resize-none transition-colors`}
                 />
 
                 <div className="flex items-center justify-between text-[11px] px-1">
@@ -361,7 +364,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                           onClick={() => handleAddPrompt(prompt)}
                           className="press text-xs bg-surface-card hover:bg-surface-strong active:scale-95 text-ink px-3 py-1.5 rounded-pill border border-hairline transition-all text-left flex items-center gap-1"
                         >
-                          <span className="text-brand-pink font-bold">+</span>
+                          <span className={`${theme.chipDot} font-bold`}>+</span>
                           <span>{prompt}</span>
                         </button>
                       ))}
@@ -433,7 +436,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                     onClick={() => setSelectedKey(draft.key as "natural" | "warm" | "short")}
                     className={`p-5 rounded-2xl border transition-all cursor-pointer relative ${
                       isSelected
-                        ? "bg-white border-brand-teal shadow-card ring-2 ring-brand-teal/20"
+                        ? theme.cardSelected
                         : "bg-surface-card/60 hover:bg-white border-hairline shadow-subtle"
                     }`}
                   >
@@ -463,7 +466,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                           type="button"
                           onClick={() => setEditingCard(isEditing ? null : draft.key)}
                           className={`p-1.5 rounded-lg transition-colors ${
-                            isEditing ? "bg-brand-teal text-white" : "text-muted hover:text-ink hover:bg-surface-soft"
+                            isEditing ? theme.activeButton : "text-muted hover:text-ink hover:bg-surface-soft"
                           }`}
                           title="Edit text"
                           aria-label="Edit review draft"
@@ -502,12 +505,12 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                             value={draft.text}
                             onChange={(e) => draft.setText(e.target.value)}
                             rows={4}
-                            className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft resize-y"
+                            className={`w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 ${theme.ring} bg-surface-soft resize-y`}
                           />
                           <button
                             type="button"
                             onClick={() => setEditingCard(null)}
-                            className="text-xs font-semibold text-brand-teal bg-surface-card hover:bg-surface-strong px-3 py-1 rounded-lg border border-hairline"
+                            className={`text-xs font-semibold ${theme.text} bg-surface-card hover:bg-surface-strong px-3 py-1 rounded-lg border border-hairline`}
                           >
                             Done Editing
                           </button>
@@ -530,12 +533,12 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                       <div className="flex items-center gap-1.5 font-medium">
                         <span
                           className={`w-4 h-4 rounded-full border flex items-center justify-center transition-colors ${
-                            isSelected ? "border-brand-teal bg-brand-teal text-white" : "border-hairline bg-white"
+                            isSelected ? theme.bullet : "border-hairline bg-white"
                           }`}
                         >
                           {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
                         </span>
-                        <span className={isSelected ? "text-brand-teal font-semibold" : "text-muted"}>
+                        <span className={isSelected ? theme.bulletSelectedText : "text-muted"}>
                           {isSelected ? "Selected for Google" : "Select this"}
                         </span>
                       </div>
