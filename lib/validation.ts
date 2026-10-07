@@ -45,6 +45,7 @@ export const ReviewGenerateInputSchema = z.object({
     .min(3, "Please describe your experience in at least 3 characters")
     .max(1000, "Feedback must not exceed 1000 characters"),
   businessSlug: z.string().trim().optional(),
+  variationIndex: z.number().int().min(0).optional(),
 });
 
 export type ReviewGenerateInput = z.infer<typeof ReviewGenerateInputSchema>;

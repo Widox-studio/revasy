@@ -2,6 +2,133 @@ import { NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Parse any direct Google Maps link, place URL, CID, or Place ID
+ */
+async function parseDirectGoogleMapsInput(input: string): Promise<any | null> {
+  let trimmed = input.trim();
+
+  // 1. Follow short link redirect (maps.app.goo.gl or goo.gl/maps)
+  if (trimmed.includes("maps.app.goo.gl") || trimmed.includes("goo.gl/maps")) {
+    try {
+      const fullUrl = trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+      const headRes = await fetch(fullUrl, {
+        method: "HEAD",
+        redirect: "follow",
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        },
+      });
+      if (headRes.url && headRes.url !== fullUrl) {
+        trimmed = headRes.url;
+      }
+    } catch (e) {
+      console.warn("Could not follow short maps redirect:", e);
+    }
+  }
+
+  // 2. Direct Google Place ID check (starts with ChIJ...)
+  const placeIdMatch = trimmed.match(/ChIJ[a-zA-Z0-9_-]{20,}/);
+  if (placeIdMatch) {
+    const pid = placeIdMatch[0];
+    return {
+      name: "Verified Google Place",
+      placeId: pid,
+      address: `Official Google Place ID: ${pid}`,
+      googleReviewUrl: `https://search.google.com/local/writereview?placeid=${pid}`,
+      embedMapUrl: `https://maps.google.com/maps?q=${encodeURIComponent(pid)}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
+      isExactPlaceId: true,
+    };
+  }
+
+  // 3. Direct Google writereview URL
+  if (trimmed.includes("search.google.com/local/writereview")) {
+    try {
+      const parsedUrl = new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
+      const pid = parsedUrl.searchParams.get("placeid");
+      if (pid) {
+        return {
+          name: "Verified Google Place",
+          placeId: pid,
+          address: `Google Review Place ID: ${pid}`,
+          googleReviewUrl: `https://search.google.com/local/writereview?placeid=${pid}`,
+          embedMapUrl: `https://maps.google.com/maps?q=${encodeURIComponent(pid)}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
+          isExactPlaceId: true,
+        };
+      }
+    } catch {}
+  }
+
+  // 4. Google Maps Place URL (/maps/place/<Name>/...)
+  if (trimmed.includes("/maps/place/")) {
+    const nameMatch = trimmed.match(/\/maps\/place\/([^/@?#]+)/);
+    let name = "Google Maps Pin";
+    if (nameMatch) {
+      name = decodeURIComponent(nameMatch[1].replace(/\+/g, " "));
+    }
+
+    // Check for hex CID: !1s0x...:0x<cidHex>
+    const hexMatch = trimmed.match(/1s(0x[0-9a-fA-F]+:0x([0-9a-fA-F]+))/);
+    let cidDec = "";
+    if (hexMatch && hexMatch[2]) {
+      try {
+        cidDec = BigInt("0x" + hexMatch[2]).toString();
+      } catch {}
+    }
+
+    // Check for coordinates
+    const coordsMatch = trimmed.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/);
+    const coords = coordsMatch ? `${coordsMatch[1]},${coordsMatch[2]}` : "";
+    const embedQuery = coords || name;
+
+    const reviewUrl = cidDec
+      ? `https://maps.google.com/?cid=${cidDec}`
+      : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(name)}`;
+
+    return {
+      name,
+      placeId: cidDec || undefined,
+      address: `Google Maps Pin: ${name}`,
+      googleReviewUrl: reviewUrl,
+      embedMapUrl: `https://maps.google.com/maps?q=${encodeURIComponent(embedQuery)}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
+      isExactPlaceId: Boolean(cidDec),
+    };
+  }
+
+  // 5. Google Maps CID link (cid=...)
+  if (trimmed.includes("cid=")) {
+    try {
+      const parsedUrl = new URL(trimmed.startsWith("http") ? trimmed : `https://${trimmed}`);
+      const cid = parsedUrl.searchParams.get("cid");
+      if (cid) {
+        return {
+          name: "Google Business Pin",
+          placeId: cid,
+          address: `Google Business CID: ${cid}`,
+          googleReviewUrl: `https://maps.google.com/?cid=${cid}`,
+          embedMapUrl: `https://maps.google.com/maps?q=cid:${cid}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
+          isExactPlaceId: true,
+        };
+      }
+    } catch {}
+  }
+
+  // 6. Short g.page link
+  if (trimmed.includes("g.page/")) {
+    const fullUrl = trimmed.startsWith("http") ? trimmed : `https://${trimmed}`;
+    return {
+      name: "Google Review Page",
+      address: trimmed,
+      googleReviewUrl: fullUrl,
+      embedMapUrl: `https://maps.google.com/maps?q=${encodeURIComponent(trimmed)}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
+      isExactPlaceId: true,
+    };
+  }
+
+  return null;
+}
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
@@ -14,49 +141,17 @@ export async function GET(req: Request) {
       );
     }
 
-    // 1. Direct Google Place ID check (starts with ChIJ...)
-    const placeIdMatch = query.match(/ChIJ[a-zA-Z0-9_-]{20,}/);
-    if (placeIdMatch) {
-      const pid = placeIdMatch[0];
+    // 1. Check if the query is a direct Google Maps link or Place ID
+    const directResult = await parseDirectGoogleMapsInput(query);
+    if (directResult) {
       return NextResponse.json({
         success: true,
-        type: "place_id",
-        results: [
-          {
-            name: "Verified Google Place",
-            placeId: pid,
-            address: `Official Google Place ID: ${pid}`,
-            googleReviewUrl: `https://search.google.com/local/writereview?placeid=${pid}`,
-            embedMapUrl: `https://maps.google.com/maps?q=${encodeURIComponent(pid)}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
-            isExactPlaceId: true,
-          },
-        ],
+        type: "direct_match",
+        results: [directResult],
       });
     }
 
-    // 2. Google Maps URL parsing
-    if (query.includes("google.com/maps") || query.includes("maps.app.goo.gl") || query.includes("g.page")) {
-      // Check for placeid in query param
-      const urlPlaceId = new URL(query.startsWith("http") ? query : `https://${query}`).searchParams.get("placeid");
-      if (urlPlaceId) {
-        return NextResponse.json({
-          success: true,
-          type: "url_extracted",
-          results: [
-            {
-              name: "Extracted Business",
-              placeId: urlPlaceId,
-              address: `Google Maps Link: ${query}`,
-              googleReviewUrl: `https://search.google.com/local/writereview?placeid=${urlPlaceId}`,
-              embedMapUrl: `https://maps.google.com/maps?q=${encodeURIComponent(urlPlaceId)}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
-              isExactPlaceId: true,
-            },
-          ],
-        });
-      }
-    }
-
-    // 3. Search via Photon / OpenStreetMap Geocoding API
+    // 2. Search via Photon / OpenStreetMap Geocoding API
     const results: Array<{
       name: string;
       placeId?: string;
@@ -104,20 +199,15 @@ export async function GET(req: Request) {
               coords.length === 2 ? `${coords[1]},${coords[0]}` : searchQueryForGoogle
             )}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
 
-            // If an OSM ID or hash is available, provide deterministic ID or Google maps search link
-            const osmId = props.osm_id ? `OSM_${props.osm_id}` : undefined;
-
             results.push({
               name,
-              placeId: osmId,
+              placeId: props.osm_id ? `OSM_${props.osm_id}` : undefined,
               address,
               category: props.osm_value,
               lat: coords[1],
               lng: coords[0],
               embedMapUrl,
-              googleReviewUrl: `https://search.google.com/local/writereview?placeid=${
-                props.osm_id ? `OSM_${props.osm_id}` : encodeURIComponent(searchQueryForGoogle)
-              }`,
+              googleReviewUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchQueryForGoogle)}`,
               isExactPlaceId: false,
             });
           }
@@ -127,18 +217,16 @@ export async function GET(req: Request) {
       // Graceful fallback if geocoding service is unavailable
     }
 
-    // Always include the query itself as a direct Google Maps pin candidate
+    // 3. Always include the primary search query as the leading Google Maps pin candidate
     const queryEmbedUrl = `https://maps.google.com/maps?q=${encodeURIComponent(
       query
     )}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
 
     results.unshift({
       name: query,
-      address: `Google Maps Search: "${query}"`,
+      address: `Google Maps Pin: "${query}"`,
       embedMapUrl: queryEmbedUrl,
-      googleReviewUrl: `https://search.google.com/local/writereview?placeid=${encodeURIComponent(
-        query.toLowerCase().replace(/[^a-z0-9]/g, "-")
-      )}`,
+      googleReviewUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`,
       isExactPlaceId: false,
     });
 

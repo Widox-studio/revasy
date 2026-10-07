@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { rating, customerText, businessSlug } = parseResult.data;
+    const { rating, customerText, businessSlug, variationIndex } = parseResult.data;
     const cleanText = sanitizeText(customerText);
 
     if (cleanText.length < 3) {
@@ -75,12 +75,17 @@ export async function POST(req: Request) {
       }
     }
 
-    // 3. Generate review drafts
+    // 3. Generate review drafts with variation rotation
+    const effectiveVariationIndex = typeof variationIndex === "number"
+      ? variationIndex
+      : Math.floor(Math.random() * 10);
+
     const drafts = await generateCustomerReviewDrafts(
       rating,
       cleanText,
       businessName,
-      businessCategory
+      businessCategory,
+      effectiveVariationIndex
     );
 
     return NextResponse.json(

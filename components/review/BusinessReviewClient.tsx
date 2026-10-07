@@ -54,6 +54,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
   const [customerText, setCustomerText] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [regenerationCount, setRegenerationCount] = useState(0);
   const [drafts, setDrafts] = useState<ReviewDrafts | null>(null);
 
   // Loading indicator phrases for Doherty Threshold
@@ -107,6 +108,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
     }
 
     setIsGenerating(true);
+    setRegenerationCount(0);
 
     try {
       const res = await fetch("/api/review/generate", {
@@ -116,6 +118,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
           rating,
           customerText: customerText.trim(),
           businessSlug: business.slug,
+          variationIndex: 0,
         }),
       });
 
@@ -139,6 +142,8 @@ export function BusinessReviewClient({ business }: { business: Business }) {
   };
 
   const handleRegenerate = async () => {
+    const nextCount = regenerationCount + 1;
+    setRegenerationCount(nextCount);
     setIsRegenerating(true);
     try {
       const res = await fetch("/api/review/generate", {
@@ -148,6 +153,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
           rating,
           customerText: customerText.trim(),
           businessSlug: business.slug,
+          variationIndex: nextCount,
         }),
       });
       const data = await res.json();
@@ -623,7 +629,9 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                           </button>
                         </div>
                       ) : (
-                        <p className="text-sm leading-relaxed text-ink select-text whitespace-pre-wrap font-sans">
+                        <p className={`text-sm leading-relaxed text-ink select-text whitespace-pre-wrap font-sans transition-all duration-300 ${
+                          isRegenerating ? "opacity-30 blur-[0.5px]" : "opacity-100"
+                        }`}>
                           &ldquo;{draft.text}&rdquo;
                         </p>
                       )}
@@ -745,7 +753,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                   className="flex items-center gap-1.5 text-xs font-semibold text-brand-pink hover:opacity-80 disabled:opacity-50 transition-colors p-1"
                 >
                   <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? "animate-spin" : ""}`} />
-                  <span>Regenerate drafts</span>
+                  <span>{isRegenerating ? "Regenerating..." : "Regenerate drafts"}</span>
                 </button>
               </div>
             </div>
