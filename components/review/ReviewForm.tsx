@@ -26,13 +26,34 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleAddPrompt = (prompt: string) => {
-    setCustomerText((prev) => {
-      const trimmed = prev.trim();
-      if (!trimmed) return prompt;
-      return `${trimmed}. ${prompt}`;
-    });
+  const handleTogglePrompt = (prompt: string) => {
+    const normPrompt = prompt.trim();
+    if (!normPrompt) return;
+
+    if (customerText.toLowerCase().includes(normPrompt.toLowerCase())) {
+      setCustomerText((prev) => {
+        const escaped = normPrompt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        let updated = prev.replace(new RegExp(escaped, "gi"), "");
+        updated = updated
+          .replace(/\s*\.\s*\./g, ".")
+          .replace(/^\s*[.,;!?]\s*/, "")
+          .replace(/\s*[.,;!?]\s*$/, "")
+          .replace(/[ \t]+/g, " ")
+          .trim();
+        return updated;
+      });
+    } else {
+      setCustomerText((prev) => {
+        const trimmed = prev.trim();
+        if (!trimmed) return normPrompt;
+        if (/[.!?]$/.test(trimmed)) {
+          return `${trimmed} ${normPrompt}`;
+        }
+        return `${trimmed}. ${normPrompt}`;
+      });
+    }
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,7 +137,11 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
         </div>
 
         {/* Quick prompt chips */}
-        <QuickPromptChips onSelectPrompt={handleAddPrompt} rating={rating} />
+        <QuickPromptChips
+          onSelectPrompt={handleTogglePrompt}
+          rating={rating}
+          currentText={customerText}
+        />
       </div>
 
       {/* Error alert if any */}

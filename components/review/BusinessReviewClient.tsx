@@ -92,12 +92,39 @@ export function BusinessReviewClient({ business }: { business: Business }) {
     setIsToastOpen(true);
   };
 
-  const handleAddPrompt = (prompt: string) => {
-    setCustomerText((prev) => {
-      const trimmed = prev.trim();
-      if (!trimmed) return prompt;
-      return `${trimmed}. ${prompt}`;
-    });
+  const isPromptSelected = (prompt: string): boolean => {
+    const normText = customerText.toLowerCase();
+    const normPrompt = prompt.toLowerCase().trim();
+    if (!normText || !normPrompt) return false;
+    return normText.includes(normPrompt);
+  };
+
+  const handleTogglePrompt = (prompt: string) => {
+    const normPrompt = prompt.trim();
+    if (!normPrompt) return;
+
+    if (isPromptSelected(normPrompt)) {
+      setCustomerText((prev) => {
+        const escaped = normPrompt.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        let updated = prev.replace(new RegExp(escaped, "gi"), "");
+        updated = updated
+          .replace(/\s*\.\s*\./g, ".")
+          .replace(/^\s*[.,;!?]\s*/, "")
+          .replace(/\s*[.,;!?]\s*$/, "")
+          .replace(/[ \t]+/g, " ")
+          .trim();
+        return updated;
+      });
+    } else {
+      setCustomerText((prev) => {
+        const trimmed = prev.trim();
+        if (!trimmed) return normPrompt;
+        if (/[.!?]$/.test(trimmed)) {
+          return `${trimmed} ${normPrompt}`;
+        }
+        return `${trimmed}. ${normPrompt}`;
+      });
+    }
   };
 
   const handleGenerate = async (e: React.FormEvent) => {
@@ -415,17 +442,30 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                       <span>Tap to add quick highlights:</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {business.customPrompts.map((prompt, idx) => (
-                        <button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleAddPrompt(prompt)}
-                          className="press text-xs bg-surface-card hover:bg-surface-strong active:scale-95 text-ink px-3 py-1.5 rounded-pill border border-hairline transition-all text-left flex items-center gap-1"
-                        >
-                          <span className={`${theme.chipDot} font-bold`}>+</span>
-                          <span>{prompt}</span>
-                        </button>
-                      ))}
+                      {business.customPrompts.map((prompt, idx) => {
+                        const isSelected = isPromptSelected(prompt);
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => handleTogglePrompt(prompt)}
+                            className={`press text-xs px-3 py-1.5 rounded-pill border transition-all text-left flex items-center gap-1.5 active:scale-95 ${
+                              isSelected
+                                ? `${theme.activeButton} border-transparent shadow-sm font-semibold ring-1 ${theme.ring}`
+                                : "bg-surface-card hover:bg-surface-strong text-ink border-hairline font-normal"
+                            }`}
+                            aria-pressed={isSelected}
+                            title={isSelected ? `Tap to remove "${prompt}"` : `Tap to add "${prompt}"`}
+                          >
+                            {isSelected ? (
+                              <Check className="w-3.5 h-3.5 shrink-0 stroke-[2.5]" />
+                            ) : (
+                              <span className={`${theme.chipDot} font-bold text-sm leading-none`}>+</span>
+                            )}
+                            <span>{prompt}</span>
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

@@ -173,7 +173,8 @@ Format strictly as JSON:
   "short": "..."
 }`;
 
-  const userPrompt = `Rating: ${rating} Stars\nCustomer's notes: "${customerText}"\nIteration: ${variationIndex}`;
+  const deduplicatedNotes = deduplicatePhrases(customerText);
+  const userPrompt = `Rating: ${rating} Stars\nCustomer's notes: "${deduplicatedNotes}"\nIteration: ${variationIndex}`;
 
   // 1. Primary: Cloudflare Workers AI
   try {
@@ -296,13 +297,35 @@ Format strictly as JSON:
   return generateMockReplyDrafts(rating, customerReview, businessName, reviewerName);
 }
 
+export function deduplicatePhrases(text: string): string {
+  if (!text) return "";
+  const parts = text.split(/(?<=[.!?\n])\s+/);
+  const seen = new Set<string>();
+  const uniqueParts: string[] = [];
+
+  for (const part of parts) {
+    const norm = part.replace(/[.!?]+$/, "").trim().toLowerCase();
+    if (!norm) continue;
+    if (!seen.has(norm)) {
+      seen.add(norm);
+      uniqueParts.push(part.trim());
+    }
+  }
+
+  return uniqueParts.length > 0 ? uniqueParts.join(" ") : text;
+}
+
 function generateMockReviewDrafts(
   rating: number,
   customerText: string,
   businessName: string,
   variationIndex: number = 0
 ): ReviewDrafts {
-  const cleanInput = customerText.replace(/\s+/g, " ").trim();
+  const cleanInput = deduplicatePhrases(customerText)
+    .replace(/\s+/g, " ")
+    .replace(/[.,;!?]+$/, "")
+    .trim();
+
   const starWord = rating === 5 ? "5-star" : `${rating}-star`;
   const idx = Math.abs(variationIndex);
 

@@ -7,6 +7,24 @@ import { getBusinessBySlugAsync, incrementBusinessReviewStats } from "@/lib/busi
 
 export const dynamic = "force-dynamic";
 
+function deduplicatePhrases(text: string): string {
+  if (!text) return "";
+  const parts = text.split(/(?<=[.!?\n])\s+/);
+  const seen = new Set<string>();
+  const uniqueParts: string[] = [];
+
+  for (const part of parts) {
+    const norm = part.replace(/[.!?]+$/, "").trim().toLowerCase();
+    if (!norm) continue;
+    if (!seen.has(norm)) {
+      seen.add(norm);
+      uniqueParts.push(part.trim());
+    }
+  }
+
+  return uniqueParts.length > 0 ? uniqueParts.join(" ") : text;
+}
+
 export async function POST(req: Request) {
   try {
     // 1. Rate limiting check
@@ -53,7 +71,8 @@ export async function POST(req: Request) {
     }
 
     const { rating, customerText, businessSlug, variationIndex } = parseResult.data;
-    const cleanText = sanitizeText(customerText);
+    const cleanText = deduplicatePhrases(sanitizeText(customerText));
+
 
     if (cleanText.length < 3) {
       return NextResponse.json(
