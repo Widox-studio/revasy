@@ -10,6 +10,7 @@
     "test": "node tests/verify_saas.js",
     "test:all": "node tests/verify_saas.js && node tests/verify_ux_edge_cases.js && node tests/verify_frontend.js",
     "test:stress": "node tests/challenger_live_edge_stress.js && node tests/challenger_d1_persistence_stress.js",
+    "deploy": "git push origin main",
     "build:cloudflare": "node scripts/build-cloudflare.js",
     "build:opennext": "opennextjs-cloudflare build --dangerouslyUseUnsupportedNextVersion"
   },
