@@ -56,6 +56,8 @@ export function GooglePlaceIdFinder({
   // Manual Place ID state
   const [manualPlaceId, setManualPlaceId] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
+  const [directPinInput, setDirectPinInput] = useState("");
+  const [isExtractingPin, setIsExtractingPin] = useState(false);
 
   // Sync initial search query when initialBusinessName changes
   useEffect(() => {
@@ -77,14 +79,12 @@ export function GooglePlaceIdFinder({
         setResults(data.results);
         setSelectedPlace(data.results[0]);
       } else {
-        // Fallback default result
+        // Fallback default result - uses official Google Maps Search URL
         const fallback: PlaceResult = {
           name: q,
-          address: `Google Maps Location: ${q}`,
+          address: `Google Maps Pin: ${q}`,
           embedMapUrl: `https://maps.google.com/maps?q=${encodeURIComponent(q)}&t=&z=16&ie=UTF8&iwloc=&output=embed`,
-          googleReviewUrl: `https://search.google.com/local/writereview?placeid=${encodeURIComponent(
-            q.toLowerCase().replace(/[^a-z0-9]/g, "-")
-          )}`,
+          googleReviewUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}`,
           isExactPlaceId: false,
         };
         setResults([fallback]);
@@ -94,6 +94,27 @@ export function GooglePlaceIdFinder({
       console.error("Failed to search places:", err);
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  // Direct Pin Link / Place ID Extraction
+  const handleExtractPin = async (inputVal: string) => {
+    const val = inputVal.trim();
+    if (!val) return;
+    setIsExtractingPin(true);
+    try {
+      const res = await fetch(`/api/places/search?q=${encodeURIComponent(val)}`);
+      const data = await res.json();
+      if (data.results && data.results.length > 0) {
+        const match = data.results[0];
+        setResults((prev) => [match, ...prev.filter((r) => r.googleReviewUrl !== match.googleReviewUrl)]);
+        setSelectedPlace(match);
+        setDirectPinInput("");
+      }
+    } catch (e) {
+      console.error("Failed to extract pin:", e);
+    } finally {
+      setIsExtractingPin(false);
     }
   };
 
@@ -241,7 +262,19 @@ export function GooglePlaceIdFinder({
                         <Compass className="w-3.5 h-3.5 text-brand-teal" />
                         Live Map Pin Preview:
                       </span>
-                      <span>Zoom or pan the map freely</span>
+                      <a
+                        href={
+                          selectedPlace?.googleReviewUrl ||
+                          `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(searchQuery)}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-brand-teal hover:underline font-semibold"
+                        title="Open this business pin on Google Maps in a new tab"
+                      >
+                        <span>Open Pin in Google Maps</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
 
                     <div className="w-full h-52 sm:h-60 rounded-2xl overflow-hidden border border-hairline shadow-subtle bg-surface-card relative">
@@ -258,6 +291,40 @@ export function GooglePlaceIdFinder({
                           Search for a business above to preview map pin
                         </div>
                       )}
+                    </div>
+                  </div>
+
+                  {/* Direct Pin Link / Place ID Quick Paste Bar */}
+                  <div className="bg-surface-soft/60 border border-hairline p-3 rounded-2xl space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-ink flex items-center gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-brand-pink" />
+                        <span>Have the exact Google Maps Link or Pin?</span>
+                      </span>
+                      <span className="text-[10px] text-muted">Auto-extracts Place ID &amp; Pin Name</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={directPinInput}
+                        onChange={(e) => setDirectPinInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleExtractPin(directPinInput);
+                          }
+                        }}
+                        placeholder="Paste link from Google Maps (e.g. maps.app.goo.gl/... or /maps/place/... or Place ID)"
+                        className="flex-1 text-xs px-3 py-2 rounded-xl border border-hairline bg-white text-ink focus:outline-none focus:ring-1 focus:ring-brand-teal"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleExtractPin(directPinInput)}
+                        disabled={isExtractingPin || !directPinInput.trim()}
+                        className="press px-3.5 py-2 bg-brand-teal text-white rounded-xl text-xs font-semibold hover:bg-[#254d4d] disabled:opacity-50 shrink-0"
+                      >
+                        {isExtractingPin ? "Applying..." : "Apply Pin"}
+                      </button>
                     </div>
                   </div>
 
@@ -375,9 +442,20 @@ export function GooglePlaceIdFinder({
             {activeTab === "search" && (
               <div className="px-6 py-4 border-t border-hairline bg-surface-card/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="text-left min-w-0">
-                  <span className="text-[10px] uppercase font-bold text-muted tracking-wider block">
-                    Selected Destination:
-                  </span>
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="text-[10px] uppercase font-bold text-muted tracking-wider">
+                      Selected Destination:
+                    </span>
+                    {selectedPlace?.isExactPlaceId ? (
+                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800">
+                        ✓ Exact Pin / Place ID
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium px-1.5 py-0.2 rounded bg-white text-muted border border-hairline">
+                        Google Maps Pin
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs font-semibold text-ink truncate block">
                     {selectedPlace?.name || "No business selected"}
                   </span>
