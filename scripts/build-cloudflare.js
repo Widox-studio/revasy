@@ -314,17 +314,12 @@ const staticExcludes = [
 ];
 
 if (fs.existsSync(publicDir)) {
-  function scanStaticFiles(dir, prefix = "") {
-    const entries = fs.readdirSync(dir, { withFileTypes: true });
-    for (const entry of entries) {
-      if (entry.isDirectory()) {
-        scanStaticFiles(path.join(dir, entry.name), `${prefix}/${entry.name}`);
-      } else {
-        staticExcludes.push(`${prefix}/${entry.name}`);
-      }
+  const entries = fs.readdirSync(publicDir, { withFileTypes: true });
+  for (const entry of entries) {
+    if (entry.isFile() && entry.name !== "_routes.json") {
+      staticExcludes.push(`/${entry.name}`);
     }
   }
-  scanStaticFiles(publicDir);
 }
 
 const uniqueExcludes = Array.from(new Set(staticExcludes));
