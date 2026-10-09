@@ -21,12 +21,13 @@ interface Particle {
 }
 
 const REVASY_PALETTE = [
-  "#4f46e5", // electric indigo
-  "#8b5cf6", // royal violet
-  "#10b981", // vibrant emerald
-  "#f59e0b", // warm amber
-  "#f43f5e", // vivid rose
-  "#06b6d4", // bright cyan
+  "#4f46e5", // Electric Revasy Indigo
+  "#8b5cf6", // Royal Violet
+  "#10b981", // Fresh Mint-Emerald
+  "#f59e0b", // Golden Amber
+  "#f97316", // Warm Coral-Peach
+  "#0d9488", // Deep Emerald-Teal
+  "#f43f5e", // Vivid Coral-Rose
 ];
 
 export const Confetti: React.FC<ConfettiProps> = ({ trigger, onComplete }) => {

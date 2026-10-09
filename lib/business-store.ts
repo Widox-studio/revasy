@@ -1,3 +1,5 @@
+import { isSuperAdminEmail } from "./auth";
+
 let fs: any = null;
 let path: any = null;
 try {
@@ -11,6 +13,43 @@ try {
   // Ignore in edge environments
 }
 
+export interface GoogleOAuthData {
+  connected: boolean;
+  connectedEmail?: string;
+  connectedName?: string;
+  accountId?: string;
+  accountName?: string;
+  locationId?: string;
+  locationName?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  tokenExpiresAt?: number;
+  connectedAt?: string;
+  scopes?: string[];
+}
+
+export interface AutoReplyConfig {
+  enabled: boolean;
+  tone: "warm" | "professional" | "concise";
+  minRating: number; // e.g., 1 (all reviews) or 4 (4-5 stars only)
+  signature: string; // e.g. "— The Cocova Team"
+  autoPublish: boolean; // default true
+  lastSyncAt?: string;
+  totalAutoRepliesSent: number;
+}
+
+export interface AutoReplyLog {
+  id: string;
+  reviewId: string;
+  reviewerName: string;
+  rating: number;
+  reviewText: string;
+  reviewDate: string;
+  replyText: string;
+  repliedAt: string;
+  status: "published" | "pending" | "failed";
+}
+
 export interface Business {
   id: string;
   slug: string;
@@ -18,9 +57,11 @@ export interface Business {
   tagline: string;
   category: string;
   description: string;
+  address?: string;
   googleReviewUrl: string;
+  placeId?: string;
   logoUrl?: string;
-  accentColor: "teal" | "pink" | "peach" | "lavender" | "ochre" | "mint";
+  accentColor: "teal" | "pink" | "peach" | "lavender" | "ochre" | "mint" | "coral";
   customPrompts: string[];
   ownerEmail: string;
   createdAt: string;
@@ -28,109 +69,16 @@ export interface Business {
     totalReviewsGenerated: number;
     totalRepliesGenerated: number;
   };
+  googleOAuth?: GoogleOAuthData;
+  autoReplyConfig?: AutoReplyConfig;
+  autoReplyLogs?: AutoReplyLog[];
 }
 
 const DATA_DIR = path ? path.join(process.cwd(), "data") : "";
 const DATA_FILE = path ? path.join(DATA_DIR, "businesses.json") : "";
 
-// Default initial businesses
-const DEFAULT_BUSINESSES: Business[] = [
-  {
-    id: "biz_cocova",
-    slug: "cocova",
-    name: "Cocova Cafe",
-    tagline: "Artisan Coffee & Warm Moments",
-    category: "Cafe & Bakery",
-    description: "Handcrafted espresso, artisan pastries, and heartwarming neighborhood hospitality.",
-    googleReviewUrl: "https://search.google.com/local/writereview?placeid=ChIJcocova_demo_place",
-    logoUrl: "",
-    accentColor: "teal",
-    customPrompts: [
-      "Amazing coffee & latte art",
-      "Super friendly baristas",
-      "Delicious pastries & fresh bites",
-      "Cozy atmosphere & great vibe",
-      "Fast service & relaxing music",
-    ],
-    ownerEmail: "owner@cocovacafe.com",
-    createdAt: new Date().toISOString(),
-    stats: {
-      totalReviewsGenerated: 45,
-      totalRepliesGenerated: 18,
-    },
-  },
-  {
-    id: "biz_apex_dental",
-    slug: "apex-dental",
-    name: "Apex Smile Dental",
-    tagline: "Gentle Care & Radiant Smiles",
-    category: "Dental & Healthcare",
-    description: "Modern family dental clinic offering gentle checkups, cosmetic dentistry, and dental hygiene.",
-    googleReviewUrl: "https://search.google.com/local/writereview?placeid=ChIJapexdental_demo",
-    logoUrl: "",
-    accentColor: "mint",
-    customPrompts: [
-      "Completely painless treatment",
-      "Very gentle and thorough dentist",
-      "Friendly front-desk team",
-      "Immaculately clean modern clinic",
-      "Transparent consultation & pricing",
-    ],
-    ownerEmail: "owner@cocovacafe.com",
-    createdAt: new Date().toISOString(),
-    stats: {
-      totalReviewsGenerated: 19,
-      totalRepliesGenerated: 8,
-    },
-  },
-  {
-    id: "biz_luxe_salon",
-    slug: "luxe-salon",
-    name: "Luxe Studio & Hair Spa",
-    tagline: "Elevate Your Style",
-    category: "Salon & Wellness",
-    description: "Bespoke styling, hair transformations, rejuvenating facials, and luxury care.",
-    googleReviewUrl: "https://search.google.com/local/writereview?placeid=ChIJluxesalon_demo",
-    logoUrl: "",
-    accentColor: "lavender",
-    customPrompts: [
-      "Flawless haircut and color",
-      "Relaxing head massage & hair spa",
-      "Attentive and talented stylist",
-      "Chic aesthetic & great hospitality",
-      "Booked appointment started right on time",
-    ],
-    ownerEmail: "owner@cocovacafe.com",
-    createdAt: new Date().toISOString(),
-    stats: {
-      totalReviewsGenerated: 27,
-      totalRepliesGenerated: 12,
-    },
-  },
-  {
-    id: "biz_1791267909539",
-    slug: "cocova-cafe",
-    name: "Cocova Cafe",
-    tagline: "Artisan Coffee & Warm Moments",
-    category: "Cafe & Restaurant",
-    description: "Aesthetic coffee shop with cozy ambience and handcrafted treats.",
-    googleReviewUrl: "https://search.google.com/local/writereview?placeid=cocova-cafe",
-    logoUrl: "/uploads/logo_1791267891343_jn2hrv.png",
-    accentColor: "peach",
-    customPrompts: [
-      "Artisan coffee was superb",
-      "Delicious pastries & brunch",
-      "Warm, welcoming staff",
-      "Cozy seating & vibe",
-    ],
-    ownerEmail: "advertising.coral@gmail.com",
-    createdAt: new Date().toISOString(),
-    stats: {
-      totalReviewsGenerated: 3,
-      totalRepliesGenerated: 1,
-    },
-  },
-];
+// Default initial businesses (empty in production - populated via persistent store or onboarding)
+const DEFAULT_BUSINESSES: Business[] = [];
 
 let inMemoryBusinesses: Business[] = [...DEFAULT_BUSINESSES];
 
@@ -180,6 +128,7 @@ function mapRowToBusiness(row: any): Business {
     tagline: row.tagline || "",
     category: row.category || "General Business",
     description: row.description || "",
+    address: row.address || "",
     googleReviewUrl: row.google_review_url || row.googleReviewUrl || "",
     logoUrl: row.logo_url || row.logoUrl || "",
     accentColor: row.accent_color || row.accentColor || "teal",
@@ -190,6 +139,15 @@ function mapRowToBusiness(row: any): Business {
       totalReviewsGenerated: row.total_reviews_generated ?? row.stats?.totalReviewsGenerated ?? 0,
       totalRepliesGenerated: row.total_replies_generated ?? row.stats?.totalRepliesGenerated ?? 0,
     },
+    googleOAuth: row.google_oauth
+      ? (typeof row.google_oauth === "string" ? JSON.parse(row.google_oauth) : row.google_oauth)
+      : (row.googleOAuth || undefined),
+    autoReplyConfig: row.auto_reply_config
+      ? (typeof row.auto_reply_config === "string" ? JSON.parse(row.auto_reply_config) : row.auto_reply_config)
+      : (row.autoReplyConfig || undefined),
+    autoReplyLogs: row.auto_reply_logs
+      ? (typeof row.auto_reply_logs === "string" ? JSON.parse(row.auto_reply_logs) : row.auto_reply_logs)
+      : (row.autoReplyLogs || []),
   };
 }
 
@@ -225,13 +183,11 @@ export function getAllBusinesses(): Business[] {
 
 export function getBusinessesByOwner(ownerEmail: string): Business[] {
   const all = getAllBusinesses();
-  return all.filter(
-    (b) =>
-      b.ownerEmail.toLowerCase() === ownerEmail.toLowerCase() ||
-      ownerEmail.toLowerCase() === "owner@cocovacafe.com" ||
-      ownerEmail.toLowerCase() === "admin@revasy.com" ||
-      ownerEmail.toLowerCase() === "admin@widox.in"
-  );
+  if (isSuperAdminEmail(ownerEmail)) {
+    return all;
+  }
+  const normalized = (ownerEmail || "").toLowerCase().trim();
+  return all.filter((b) => b.ownerEmail.toLowerCase() === normalized);
 }
 
 export function getBusinessBySlug(slug: string): Business | null {
@@ -240,6 +196,8 @@ export function getBusinessBySlug(slug: string): Business | null {
   return all.find((b) => b.slug.toLowerCase() === normalized) || null;
 }
 
+const WORKER_D1_API = process.env.CLOUDFLARE_WORKER_URL || "https://revasy-api.widoxstudio.workers.dev";
+
 export async function getAllBusinessesAsync(): Promise<Business[]> {
   const d1 = getD1Binding();
   if (d1 && typeof d1.prepare === "function") {
@@ -247,20 +205,38 @@ export async function getAllBusinessesAsync(): Promise<Business[]> {
       const res = await d1.prepare("SELECT * FROM businesses ORDER BY created_at DESC;").all();
       if (res && res.results && res.results.length > 0) {
         const d1Businesses = res.results.map(mapRowToBusiness);
-        const existingSlugs = new Set(d1Businesses.map((b: Business) => b.slug.toLowerCase()));
-        const merged = [...d1Businesses];
-        for (const defBiz of inMemoryBusinesses) {
-          if (!existingSlugs.has(defBiz.slug.toLowerCase())) {
-            merged.push(defBiz);
-          }
-        }
-        inMemoryBusinesses = merged;
+        inMemoryBusinesses = d1Businesses;
         return inMemoryBusinesses;
       }
     } catch (e) {
       console.warn("D1 query error in getAllBusinessesAsync:", e);
     }
   }
+
+  // Cloudflare D1 Edge Worker Gateway (syncs with live Cloudflare D1 database in local dev)
+  try {
+    const workerRes = await fetch(`${WORKER_D1_API}/api/businesses`, {
+      method: "GET",
+      cache: "no-store",
+    });
+    if (workerRes.ok) {
+      const data = await workerRes.json();
+      if (data && Array.isArray(data.results) && data.results.length > 0) {
+        const remoteBusinesses = data.results.map(mapRowToBusiness);
+        inMemoryBusinesses = remoteBusinesses;
+        if (isFsAvailable()) {
+          try {
+            ensureDataFile();
+            fs.writeFileSync(DATA_FILE, JSON.stringify(remoteBusinesses, null, 2), "utf-8");
+          } catch {}
+        }
+        return inMemoryBusinesses;
+      }
+    }
+  } catch (e) {
+    // Fall back to local store if offline
+  }
+
   return getAllBusinesses();
 }
 
@@ -286,13 +262,16 @@ export async function getBusinessBySlugAsync(slug: string): Promise<Business | n
 
 export async function getBusinessesByOwnerAsync(ownerEmail: string): Promise<Business[]> {
   const all = await getAllBusinessesAsync();
-  return all.filter(
-    (b) =>
-      b.ownerEmail.toLowerCase() === ownerEmail.toLowerCase() ||
-      ownerEmail.toLowerCase() === "owner@cocovacafe.com" ||
-      ownerEmail.toLowerCase() === "admin@revasy.com" ||
-      ownerEmail.toLowerCase() === "admin@widox.in"
-  );
+  if (isSuperAdminEmail(ownerEmail)) {
+    return all;
+  }
+  const normalized = (ownerEmail || "").toLowerCase().trim();
+  return all.filter((b) => b.ownerEmail.toLowerCase() === normalized);
+}
+
+export async function getSingleBusinessForOwnerAsync(ownerEmail: string): Promise<Business | null> {
+  const owned = await getBusinessesByOwnerAsync(ownerEmail);
+  return owned.length > 0 ? owned[0] : null;
 }
 
 export async function saveBusinessAsync(business: Business): Promise<Business> {
@@ -351,6 +330,15 @@ export async function saveBusinessAsync(business: Business): Promise<Business> {
       }).catch(() => {});
     } catch {}
   }
+
+  // 3. Cloudflare D1 Edge Worker Gateway (direct cloud sync from local dev)
+  try {
+    await fetch(`${WORKER_D1_API}/api/businesses`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(business),
+    });
+  } catch {}
 
   // 3. Local filesystem persistence if running in Node.js
   if (isFsAvailable()) {
@@ -426,3 +414,165 @@ export function incrementBusinessReplyStats(slug: string): void {
     saveBusiness(b);
   }
 }
+
+export async function updateBusinessGoogleOAuth(
+  slug: string,
+  data: Partial<GoogleOAuthData>
+): Promise<Business | null> {
+  const b = await getBusinessBySlugAsync(slug);
+  if (!b) return null;
+
+  b.googleOAuth = {
+    connected: true,
+    ...(b.googleOAuth || {}),
+    ...data,
+  };
+
+  // If autoReplyConfig doesn't exist yet, initialize default
+  if (!b.autoReplyConfig) {
+    b.autoReplyConfig = {
+      enabled: true,
+      tone: "warm",
+      minRating: 1,
+      signature: `— Team ${b.name}`,
+      autoPublish: true,
+      totalAutoRepliesSent: 0,
+      lastSyncAt: new Date().toISOString(),
+    };
+  }
+
+  await saveBusinessAsync(b);
+  return b;
+}
+
+export async function updateBusinessAutoReplyConfig(
+  slug: string,
+  configData: Partial<AutoReplyConfig>
+): Promise<Business | null> {
+  const b = await getBusinessBySlugAsync(slug);
+  if (!b) return null;
+
+  b.autoReplyConfig = {
+    enabled: true,
+    tone: "warm",
+    minRating: 1,
+    signature: `— Team ${b.name}`,
+    autoPublish: true,
+    totalAutoRepliesSent: 0,
+    ...(b.autoReplyConfig || {}),
+    ...configData,
+  };
+
+  await saveBusinessAsync(b);
+  return b;
+}
+
+export async function addBusinessAutoReplyLog(
+  slug: string,
+  log: AutoReplyLog
+): Promise<Business | null> {
+  const b = await getBusinessBySlugAsync(slug);
+  if (!b) return null;
+
+  if (!b.autoReplyLogs) {
+    b.autoReplyLogs = [];
+  }
+
+  // Prepend latest log
+  b.autoReplyLogs.unshift(log);
+
+  // Keep last 50 logs
+  if (b.autoReplyLogs.length > 50) {
+    b.autoReplyLogs = b.autoReplyLogs.slice(0, 50);
+  }
+
+  if (b.autoReplyConfig) {
+    b.autoReplyConfig.totalAutoRepliesSent = (b.autoReplyConfig.totalAutoRepliesSent || 0) + 1;
+    b.autoReplyConfig.lastSyncAt = new Date().toISOString();
+  }
+
+  b.stats.totalRepliesGenerated = (b.stats.totalRepliesGenerated || 0) + 1;
+
+  await saveBusinessAsync(b);
+  return b;
+}
+
+export async function clearBusinessGoogleOAuth(
+  slug: string
+): Promise<Business | null> {
+  const b = await getBusinessBySlugAsync(slug);
+  if (!b) return null;
+
+  b.googleOAuth = {
+    connected: false,
+  };
+
+  if (b.autoReplyConfig) {
+    b.autoReplyConfig.enabled = false;
+  }
+
+  await saveBusinessAsync(b);
+  return b;
+}
+
+export async function clearBusinessAutoReplyLogs(
+  slug: string
+): Promise<Business | null> {
+  const b = await getBusinessBySlugAsync(slug);
+  if (!b) return null;
+
+  b.autoReplyLogs = [];
+  if (b.autoReplyConfig) {
+    b.autoReplyConfig.totalAutoRepliesSent = 0;
+  }
+
+  await saveBusinessAsync(b);
+  return b;
+}
+
+export async function deleteBusinessAsync(slugOrId: string): Promise<boolean> {
+  const all = getAllBusinesses();
+  const filtered = all.filter((b) => b.id !== slugOrId && b.slug.toLowerCase() !== slugOrId.toLowerCase());
+  inMemoryBusinesses = filtered;
+
+  if (isFsAvailable()) {
+    try {
+      ensureDataFile();
+      fs.writeFileSync(DATA_FILE, JSON.stringify(filtered, null, 2), "utf-8");
+    } catch (err) {
+      console.warn("Failed deleting business from file:", err);
+    }
+  }
+
+  const d1 = getD1Binding();
+  if (d1 && typeof d1.prepare === "function") {
+    try {
+      await d1.prepare("DELETE FROM businesses WHERE lower(slug) = ? OR id = ?;").bind(slugOrId.toLowerCase(), slugOrId).run();
+    } catch (e) {
+      console.warn("D1 delete error:", e);
+    }
+  }
+
+  const cfAccountId = process.env.CLOUDFLARE_ACCOUNT_ID || "38d1ceb6731de305dc93daf3659e371c";
+  const cfApiToken = process.env.CLOUDFLARE_API_TOKEN;
+  if (cfAccountId && cfApiToken) {
+    try {
+      const sql = `DELETE FROM businesses WHERE lower(slug) = '${slugOrId.toLowerCase().replace(/'/g, "''")}' OR id = '${slugOrId.replace(/'/g, "''")}';`;
+      await fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/d1/database/52df4dc3-0470-4abb-a41d-c1d9c534defc/query`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${cfApiToken}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ sql })
+      }).catch(() => {});
+    } catch {}
+  }
+
+  // Cloudflare D1 Edge Worker Gateway (direct cloud sync from local dev)
+  try {
+    await fetch(`${WORKER_D1_API}/api/businesses/${encodeURIComponent(slugOrId)}`, {
+      method: "DELETE",
+    });
+  } catch {}
+
+  return true;
+}
+

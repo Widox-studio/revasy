@@ -1,4 +1,4 @@
-export type AccentColor = "teal" | "pink" | "peach" | "lavender" | "ochre" | "mint";
+export type AccentColor = "teal" | "pink" | "peach" | "lavender" | "ochre" | "mint" | "coral";
 
 export interface AccentTheme {
   key: AccentColor;
@@ -15,6 +15,66 @@ export interface AccentTheme {
   chipDot: string;
   lightBg: string;
 }
+
+export interface ThemeAccentConfig {
+  label: string;
+  primary: string;
+  light: string;
+  border: string;
+  text: string;
+}
+
+export const THEME_ACCENTS: Record<AccentColor, ThemeAccentConfig> = {
+  teal: {
+    label: "Teal",
+    primary: "#0d9488",
+    light: "#f0fdfa",
+    border: "#99f6e4",
+    text: "#115e59",
+  },
+  pink: {
+    label: "Indigo",
+    primary: "#6366f1",
+    light: "#eef2ff",
+    border: "#c7d2fe",
+    text: "#3730a3",
+  },
+  peach: {
+    label: "Peach",
+    primary: "#f97316",
+    light: "#fff7ed",
+    border: "#fed7aa",
+    text: "#9a3412",
+  },
+  lavender: {
+    label: "Lavender",
+    primary: "#8b5cf6",
+    light: "#f5f3ff",
+    border: "#ddd6fe",
+    text: "#5b21b6",
+  },
+  ochre: {
+    label: "Ochre",
+    primary: "#f59e0b",
+    light: "#fffbeb",
+    border: "#fde68a",
+    text: "#92400e",
+  },
+  mint: {
+    label: "Mint",
+    primary: "#10b981",
+    light: "#ecfdf5",
+    border: "#a7f3d0",
+    text: "#065f46",
+  },
+  coral: {
+    label: "Coral",
+    primary: "#f43f5e",
+    light: "#fff1f2",
+    border: "#fecdd3",
+    text: "#9f1239",
+  },
+};
 
 export const ACCENT_THEMES: Record<AccentColor, AccentTheme> = {
   teal: {
@@ -106,6 +166,21 @@ export const ACCENT_THEMES: Record<AccentColor, AccentTheme> = {
     activeButton: "bg-brand-ochre text-ink",
     chipDot: "text-amber-700",
     lightBg: "bg-brand-ochre/15",
+  },
+  coral: {
+    key: "coral",
+    name: "Coral",
+    bar: "bg-brand-coral",
+    badge: "bg-brand-coral/20 text-rose-900 border-brand-coral/35",
+    cardSelected: "bg-white border-brand-coral shadow-card ring-2 ring-brand-coral/25",
+    bullet: "border-brand-coral bg-brand-coral text-white",
+    bulletSelectedText: "text-rose-900 font-semibold",
+    text: "text-rose-800",
+    border: "border-brand-coral",
+    ring: "focus:ring-brand-coral",
+    activeButton: "bg-brand-coral text-white",
+    chipDot: "text-rose-600",
+    lightBg: "bg-brand-coral/10",
   },
 };
 

@@ -11,10 +11,10 @@ export const Card: React.FC<CardProps> = ({
   ...props
 }) => {
   const variantStyles = {
-    default: "bg-white border border-cafe-200/80 shadow-subtle rounded-2xl",
-    elevated: "bg-white border border-cafe-200/60 shadow-card rounded-2xl",
-    flat: "bg-crema-warm border border-cafe-200/50 rounded-2xl",
-    bordered: "bg-white border-2 border-cafe-300 rounded-2xl",
+    default: "bg-surface-card border border-hairline shadow-subtle rounded-2xl",
+    elevated: "bg-surface-card border border-hairline shadow-card rounded-2xl sm:rounded-3xl",
+    flat: "bg-surface-soft border border-hairline/80 rounded-2xl",
+    bordered: "bg-surface-card border-2 border-hairline rounded-2xl",
   };
 
   return (

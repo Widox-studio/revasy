@@ -101,14 +101,14 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ onCopySuccess })
       {/* Input Form Section */}
       <form
         onSubmit={handleGenerate}
-        className="bg-white rounded-2xl border border-cafe-200/80 shadow-subtle p-5 sm:p-6 space-y-4"
+        className="bg-white rounded-3xl border border-hairline shadow-subtle p-6 sm:p-8 space-y-4"
       >
         <div className="space-y-1">
-          <h2 className="text-lg sm:text-xl font-serif font-bold text-espresso">
+          <h2 className="font-display font-semibold text-lg sm:text-xl text-ink">
             AI Google Review Reply Generator
           </h2>
-          <p className="text-xs text-espresso-muted">
-            Paste any customer Google review below. Our AI crafts 3 tailored, authentic replies adhering to cafe policies.
+          <p className="text-xs text-muted">
+            Paste any customer Google review below. Our AI crafts 3 tailored, authentic replies adhering to hospitality standards.
           </p>
         </div>
 
@@ -116,10 +116,10 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ onCopySuccess })
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
           {/* Rating selector for the customer's review */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-espresso-muted">
+            <label className="block text-xs font-semibold uppercase tracking-wider text-muted">
               Customer&apos;s Star Rating
             </label>
-            <div className="flex items-center gap-1.5 p-2 bg-cafe-50 rounded-xl border border-cafe-200">
+            <div className="flex items-center gap-1.5 p-2 bg-surface-soft rounded-xl border border-hairline">
               {[1, 2, 3, 4, 5].map((star) => (
                 <button
                   key={star}
@@ -132,12 +132,12 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ onCopySuccess })
                     className={`w-6 h-6 ${
                       star <= rating
                         ? "fill-amber-400 text-amber-500 drop-shadow-sm"
-                        : "text-cafe-300"
+                        : "text-hairline"
                     }`}
                   />
                 </button>
               ))}
-              <span className="text-xs font-semibold text-espresso ml-2">
+              <span className="text-xs font-semibold text-ink ml-2">
                 {rating} / 5 Stars
               </span>
             </div>
@@ -147,9 +147,9 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ onCopySuccess })
           <div className="space-y-1.5">
             <label
               htmlFor="reviewer-name"
-              className="block text-xs font-semibold uppercase tracking-wider text-espresso-muted"
+              className="block text-xs font-semibold uppercase tracking-wider text-muted"
             >
-              Reviewer Name <span className="font-normal lowercase text-[11px]">(optional)</span>
+              Reviewer Name <span className="font-normal lowercase text-[11px] text-muted-soft">(optional)</span>
             </label>
             <input
               id="reviewer-name"
@@ -158,7 +158,7 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ onCopySuccess })
               onChange={(e) => setReviewerName(e.target.value)}
               placeholder="e.g. Sarah Jenkins"
               maxLength={80}
-              className="w-full text-sm text-espresso p-2.5 rounded-xl border border-cafe-200 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-cafe-50/50"
+              className="w-full text-sm text-ink p-2.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
             />
           </div>
         </div>
@@ -167,7 +167,7 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ onCopySuccess })
         <div className="space-y-1.5">
           <label
             htmlFor="customer-review"
-            className="block text-xs font-semibold uppercase tracking-wider text-espresso-muted"
+            className="block text-xs font-semibold uppercase tracking-wider text-muted"
           >
             Paste Google Review Text
           </label>
@@ -178,11 +178,11 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ onCopySuccess })
             rows={4}
             maxLength={2500}
             placeholder="e.g. Waited 15 minutes for our iced latte during the morning rush, but the coffee was top-notch and the barista apologized for the delay."
-            className="w-full text-sm text-espresso p-3.5 rounded-xl border border-cafe-200 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-cafe-50/40 resize-y"
+            className="w-full text-sm text-ink p-3.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40 resize-y"
           />
-          <div className="flex items-center justify-between text-xs text-espresso-muted px-1">
-            <span>{customerReview.length} / 2500</span>
-            <span>Does not invent facts or unapproved cafe promises</span>
+          <div className="flex items-center justify-between text-xs text-muted-soft px-1">
+            <span>{customerReview.length} / 2500 characters</span>
+            <span>Does not invent facts or unapproved business promises</span>
           </div>
         </div>
 
@@ -198,12 +198,12 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ onCopySuccess })
         <div className="flex items-center gap-3 pt-2">
           <Button
             type="submit"
-            variant="amber"
+            variant="primary"
             size="md"
             isLoading={isLoading}
-            className="flex-1 shadow-glow"
+            className="flex-1 shadow-revasy"
           >
-            <Sparkles className="w-4 h-4 mr-2" />
+            <Sparkles className="w-4 h-4 mr-2 text-brand-pink" />
             <span>Generate Replies</span>
           </Button>
 
@@ -211,7 +211,7 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ onCopySuccess })
             <button
               type="button"
               onClick={handleReset}
-              className="p-2.5 text-xs text-espresso-muted hover:text-espresso bg-cafe-100 hover:bg-cafe-200 rounded-xl transition-colors flex items-center gap-1 font-medium"
+              className="press p-2.5 text-xs text-muted hover:text-ink bg-surface-card hover:bg-surface-strong border border-hairline rounded-xl transition-colors flex items-center gap-1 font-semibold"
               title="Clear and start over"
             >
               <RotateCcw className="w-4 h-4" />
@@ -225,13 +225,13 @@ export const ReplyGenerator: React.FC<ReplyGeneratorProps> = ({ onCopySuccess })
       {replies && (
         <div className="space-y-4 animate-fadeIn">
           <div className="flex items-center justify-between">
-            <h3 className="font-serif font-bold text-lg text-espresso">
+            <h3 className="font-display font-semibold text-lg text-ink">
               Generated Response Options
             </h3>
             <button
               onClick={() => handleGenerate()}
               disabled={isLoading}
-              className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 px-3 py-1.5 rounded-xl border border-amber-200 transition-colors disabled:opacity-50"
+              className="press flex items-center gap-1.5 text-xs font-semibold text-brand-pink bg-surface-card hover:bg-surface-strong px-3 py-1.5 rounded-xl border border-hairline transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
               <span>Regenerate all</span>

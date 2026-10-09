@@ -98,26 +98,26 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {/* 1. Rating Selector Section */}
-      <div className="bg-white/80 p-5 rounded-2xl border border-cafe-200/80 shadow-subtle text-center space-y-2">
-        <h3 className="text-base sm:text-lg font-serif font-semibold text-espresso">
-          How was your experience at Cocova?
+      <div className="bg-surface-card p-5 rounded-2xl border border-hairline shadow-subtle text-center space-y-2">
+        <h3 className="font-display font-medium text-base sm:text-lg text-ink">
+          How was your experience today?
         </h3>
         <RatingSelector value={rating} onChange={(val) => setRating(val)} size="lg" />
       </div>
 
       {/* 2. Experience Description */}
-      <div className="bg-white/90 p-5 rounded-2xl border border-cafe-200/80 shadow-subtle space-y-3">
-        <div className="space-y-1">
+      <div className="bg-surface-card p-5 rounded-2xl border border-hairline shadow-subtle space-y-3">
+        <div className="space-y-0.5">
           <label
             htmlFor="customer-notes"
-            className="block text-sm font-serif font-semibold text-espresso"
+            className="block font-display font-semibold text-sm text-ink"
           >
             Tell us a little about your experience
           </label>
-          <p className="text-xs text-espresso-muted">
-            Mention your favorite drink, pastries, or how the team treated you.
+          <p className="text-xs text-muted">
+            Mention your favorite item, staff service, or overall ambiance.
           </p>
         </div>
 
@@ -127,13 +127,15 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
           onChange={(e) => setCustomerText(e.target.value)}
           rows={4}
           maxLength={1000}
-          placeholder="e.g. Loved the Spanish latte and the almond croissant was flaky and fresh! Staff greeted us with warm smiles."
-          className="w-full text-sm text-espresso p-3.5 rounded-xl border border-cafe-200 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-cafe-50/40 resize-none transition-colors placeholder:text-stone-400"
+          placeholder="e.g. Loved the friendly service and relaxing vibe! Everything was prompt and well handled."
+          className="w-full text-sm text-ink p-3.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-primary bg-surface-soft/60 resize-none transition-colors placeholder:text-muted/60"
         />
 
-        <div className="flex items-center justify-between text-xs text-espresso-muted px-1">
-          <span>{customerText.length} / 1000</span>
-          <span>Genuine feedback makes our day</span>
+        <div className="flex items-center justify-between text-xs text-muted px-1">
+          <span className={customerText.trim().length >= 10 ? "text-emerald-700 font-medium" : "text-muted"}>
+            {customerText.length} / 1000 characters
+          </span>
+          <span className="text-muted-soft">AI polishes genuine feedback</span>
         </div>
 
         {/* Quick prompt chips */}
@@ -155,16 +157,16 @@ export const ReviewForm: React.FC<ReviewFormProps> = ({
       {/* 3. Submit CTA */}
       <Button
         type="submit"
-        variant="amber"
+        variant="primary"
         size="lg"
         isLoading={isLoading}
-        className="w-full text-base font-semibold shadow-glow"
+        className="w-full text-base font-semibold shadow-revasy !rounded-2xl"
       >
-        <Sparkles className="w-5 h-5 mr-2" />
-        <span>Create My Review</span>
+        <Sparkles className="w-5 h-5 mr-2 text-brand-pink" />
+        <span>Create My Review Drafts</span>
       </Button>
 
-      <p className="text-center text-[11px] text-espresso-muted leading-relaxed">
+      <p className="text-center text-[11px] text-muted-soft leading-relaxed">
         Our AI organizes your notes into 3 ready-to-post options. You can edit any draft before continuing to Google.
       </p>
     </form>

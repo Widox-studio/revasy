@@ -11,14 +11,17 @@ const isPublicRoute = createRouteMatcher([
   "/login(.*)",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  "/admin/login(.*)",
   "/api/review(.*)",
   "/api/feedback(.*)",
   "/api/businesses(.*)",
-  "/api/upload(.*)",
   "/api/places(.*)",
   "/api/admin/login",
   "/api/admin/logout",
   "/api/admin/reply/generate",
+  "/api/auth/google/callback(.*)",
+  "/privacy(.*)",
+  "/terms(.*)",
   "/manifest.webmanifest",
   "/robots.txt",
   "/sitemap.xml",
@@ -33,15 +36,32 @@ const clerkHandler = clerkMiddleware((auth, request) => {
   Object.entries(securityHeaders).forEach(([k, v]) => response.headers.set(k, v));
 
   // Legacy convenience redirects
-  if (pathname === "/admin") return NextResponse.redirect(new URL("/dashboard", request.url));
-  if (pathname === "/admin/login") return NextResponse.redirect(new URL("/login", request.url));
   if (pathname === "/review") return NextResponse.redirect(new URL("/b/cocova", request.url));
 
-  // Require authentication for private routes (Clerk auth or demo admin session)
+  // Require authentication for private routes (Clerk auth or admin session)
   const adminSessionCookie =
+    request.cookies.get("revasy_admin_session") ||
     request.cookies.get("admin_session_token") ||
     request.cookies.get(appConfig.admin.cookieName) ||
     request.cookies.get("cocova_session");
+
+  // Admin routes specifically require admin login
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    if (!adminSessionCookie?.value) {
+      try {
+        const clerkAuth = auth();
+        if (!clerkAuth?.userId) {
+          const adminLoginUrl = new URL("/admin/login", request.url);
+          adminLoginUrl.searchParams.set("redirect_url", pathname);
+          return NextResponse.redirect(adminLoginUrl);
+        }
+      } catch {
+        const adminLoginUrl = new URL("/admin/login", request.url);
+        adminLoginUrl.searchParams.set("redirect_url", pathname);
+        return NextResponse.redirect(adminLoginUrl);
+      }
+    }
+  }
 
   if (!isPublicRoute(request) && !adminSessionCookie?.value) {
     try {

@@ -48,14 +48,28 @@ export async function POST(req: Request) {
       message: "Logged in successfully",
     });
 
+    const cookieOptions = {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "lax" as const,
+      path: "/",
+      maxAge: config.admin.sessionMaxAgeSeconds,
+    };
+
     response.cookies.set({
       name: config.admin.cookieName,
       value: sessionToken,
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: "lax",
-      path: "/",
-      maxAge: config.admin.sessionMaxAgeSeconds,
+      ...cookieOptions,
+    });
+    response.cookies.set({
+      name: "admin_session_token",
+      value: sessionToken,
+      ...cookieOptions,
+    });
+    response.cookies.set({
+      name: "revasy_admin_session",
+      value: sessionToken,
+      ...cookieOptions,
     });
 
     return response;

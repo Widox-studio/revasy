@@ -8,7 +8,7 @@ export interface ReplyOption {
   key: "professional" | "warm" | "concise";
   title: string;
   badge: string;
-  badgeVariant: "espresso" | "amber" | "neutral";
+  badgeVariant: "espresso" | "amber" | "neutral" | "indigo" | "teal" | "green";
   description: string;
   text: string;
 }
@@ -34,12 +34,12 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-cafe-200/80 shadow-subtle hover:shadow-card transition-all p-5 space-y-3">
+    <div className="bg-white rounded-2xl border border-hairline shadow-subtle hover:shadow-card transition-all p-5 space-y-3">
       {/* Top Header */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Badge variant={option.badgeVariant}>{option.title}</Badge>
-          <span className="text-xs text-espresso-muted hidden sm:inline">
+          <span className="text-xs text-muted hidden sm:inline">
             {option.description}
           </span>
         </div>
@@ -48,8 +48,9 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
           <button
             type="button"
             onClick={() => setIsEditing(!isEditing)}
-            className="p-1.5 rounded-lg text-espresso-muted hover:text-espresso hover:bg-cafe-100 transition-colors"
+            className="p-1.5 rounded-lg text-muted hover:text-ink hover:bg-surface-soft transition-colors"
             title={isEditing ? "Finish editing" : "Edit response"}
+            aria-label="Edit response"
           >
             <Edit3 className="w-4 h-4" />
           </button>
@@ -57,10 +58,10 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
           <button
             type="button"
             onClick={handleCopy}
-            className={`flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all shadow-sm ${
+            className={`press flex items-center gap-1 text-xs font-semibold px-3 py-1.5 rounded-xl transition-all shadow-sm ${
               copied
                 ? "bg-emerald-600 text-white"
-                : "bg-espresso text-cream hover:bg-espresso-light active:bg-espresso-dark"
+                : "bg-primary text-on-primary hover:bg-primary-hover active:bg-indigo-800"
             }`}
           >
             {copied ? (
@@ -85,16 +86,16 @@ export const ReplyCard: React.FC<ReplyCardProps> = ({
             value={option.text}
             onChange={(e) => onTextChange(e.target.value)}
             rows={4}
-            className="w-full text-sm text-espresso p-3.5 rounded-xl border border-cafe-300 focus:outline-none focus:ring-2 focus:ring-amber-500 bg-cafe-50/50 resize-y"
+            className="w-full text-sm text-ink p-3.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft resize-y"
           />
         ) : (
-          <p className="text-sm leading-relaxed text-espresso bg-cafe-50/40 p-4 rounded-xl border border-cafe-100 select-text whitespace-pre-wrap">
+          <p className="text-sm leading-relaxed text-ink bg-surface-soft/60 p-4 rounded-xl border border-hairline select-text whitespace-pre-wrap font-sans">
             {option.text}
           </p>
         )}
       </div>
 
-      <div className="flex items-center justify-between text-[11px] text-espresso-muted pt-1">
+      <div className="flex items-center justify-between text-[11px] text-muted-soft pt-1">
         <span>Ready to paste directly into Google Business Profile</span>
         <span>{option.text.length} characters</span>
       </div>

@@ -14,7 +14,7 @@
 | F1 | Edge Build & Runtime | Stub `node:vm`, `worker_threads`, and `fs` in `scripts/build-cloudflare.js`; eliminate runtime 500 error | M1 | Completed |
 | F2 | Static Asset Edge Delivery | Direct edge serving for `/_next/static/*`, `/favicon.ico`, `/icon-192.png`, `/manifest.webmanifest`, `/robots.txt`, `/sitemap.xml` | M1 | Completed |
 | F3 | Cloudflare D1 Persistence | Asynchronous D1 queries (`SELECT`/`INSERT`) in `lib/business-store.ts` via `globalThis.DB` / `env.DB` | M2 | Completed |
-| F4 | Places Autocomplete & Pin Resolution | Location search in `/api/places/search` with Photon OSM geocoding, shortlinks (`maps.app.goo.gl`), hex CID conversion, and `ChIJ` Place ID parsing in `GooglePlaceIdFinder.tsx` | M2 | Completed |
+| F4 | Places Autocomplete & Pin Resolution | Server-side Google Maps live embed entity extraction (`extractFromGoogleMapsEmbed`) and client Place ID finder making the pinned map preview the automatic source of location truth, generating 1-click review URLs (`https://search.google.com/local/writereview?placeid=...` and CID links) | M2 | Completed |
 | F5 | Cloudflare Workers AI Engine | Workers AI inference in `lib/openai.ts` for `/api/review/generate` & `/api/admin/reply/generate` via `globalThis.AI` with multi-tier fallback | M3 | Completed |
 | F6 | Customer Review & Feedback Safeguard | 1-5 star review experience at `/b/:slug` with Private Feedback Safeguard for <= 3 stars | M3 | Completed |
 | F7 | NFC/QR Table Stand Studio | Live SVG/canvas previews, print tent templates, multi-tenant creation at `/dashboard/new` and `/dashboard/:slug` | M4 | Completed |
@@ -51,9 +51,10 @@
   4. Quaternary: Deterministic zero-hallucination template engine.
 
 ### `components/maps/GooglePlaceIdFinder.tsx` ↔ `/api/places/search`
-- Supports geocoded search via Photon OSM and direct Google Maps link extraction (`maps.app.goo.gl`, `goo.gl/maps`, `/maps/place/`, hex CID, `ChIJ...`).
-- Direct paste bar extracts exact Pin Name, official Google Place ID, and embed iframe URL.
-- Live map preview provides link to open the exact business pin in Google Maps.
+- Live Map Pin Extraction: Server-side `extractFromGoogleMapsEmbed(query)` fetches the Google Maps embed response and parses the exact entity payload (`ChIJ...` Place ID, decimal CID, official place name, and formatted address). The live map preview pin immediately becomes the verified source of location truth without requiring manual link copying or pasting.
+- Generates official 1-click Google 5-star review URLs (`https://search.google.com/local/writereview?placeid=...`) and direct decimal CID links (`https://maps.google.com/?cid=...`), completely eliminating broken search query URLs (`/maps/search/?api=1&query=...`).
+- Embedded interactive Google Place ID Finder tool in Method 2 for manual lookups and verification.
+- Guards against saving unverified keyword search strings.
 
 ### `components/review/BusinessReviewClient.tsx` ↔ Customer Review Experience
 - For ratings 4–5: Continue to Google button copies text, triggers confetti, and opens `business.googleReviewUrl`.

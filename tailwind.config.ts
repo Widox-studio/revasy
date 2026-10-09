@@ -76,8 +76,9 @@ const config: Config = {
       boxShadow: {
         subtle: "0 1px 3px 0 rgba(15, 23, 42, 0.05), 0 1px 2px -1px rgba(15, 23, 42, 0.05)",
         card: "0 4px 20px -2px rgba(15, 23, 42, 0.05), 0 2px 6px -1px rgba(15, 23, 42, 0.02)",
-        widox: "0 4px 20px -2px rgba(79, 70, 229, 0.15), 0 2px 6px -1px rgba(15, 23, 42, 0.04)",
+        widox: "0 10px 30px -4px rgba(79, 70, 229, 0.18), 0 4px 10px -2px rgba(15, 23, 42, 0.04)",
         revasy: "0 10px 30px -4px rgba(79, 70, 229, 0.18), 0 4px 10px -2px rgba(15, 23, 42, 0.04)",
+        glow: "0 0 20px -2px rgba(79, 70, 229, 0.25)",
         floating: "0 20px 40px -10px rgba(15, 23, 42, 0.12)",
       },
       borderRadius: {
@@ -109,7 +110,8 @@ const config: Config = {
         fadeIn: "fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         slideUp: "slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards",
         scaleIn: "scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards",
-        shimmer: "shimmer 2s infinite linear",
+        scaleUp: "scaleIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        shimmer: "shimmer 1.8s infinite linear",
         pulseGlow: "pulseGlow 2s infinite ease-in-out",
       },
     },
@@ -117,7 +119,7 @@ const config: Config = {
   plugins: [],
   safelist: [
     {
-      pattern: /(bg|text|border|ring)-brand-(teal|pink|peach|mint|lavender|ochre)(\/[0-9]+)?/,
+      pattern: /(bg|text|border|ring)-brand-(teal|pink|peach|mint|lavender|ochre|coral)(\/[0-9]+)?/,
       variants: ["hover", "focus", "group-hover", "active"],
     },
     "text-amber-800",

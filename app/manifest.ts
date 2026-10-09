@@ -2,10 +2,10 @@ import { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Revasy Review Assistant",
-    short_name: "Revasy",
+    name: "revasy Review Assistant",
+    short_name: "revasy",
     description:
-      "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by Revasy.",
+      "Turn in-store visits into 5-star Google reviews in 30 seconds with custom NFC & QR table stands and AI reply assistants by revasy.",
     start_url: "/",
     display: "standalone",
     background_color: "#f8fafc",

@@ -4,6 +4,8 @@ import { getBusinessBySlugAsync } from "@/lib/business-store";
 import { BusinessReviewClient } from "@/components/review/BusinessReviewClient";
 import type { Metadata } from "next";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: {
     slug: string;
@@ -14,12 +16,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const business = await getBusinessBySlugAsync(params.slug);
   if (!business) {
     return {
-      title: "Business Not Found | Revasy Review Assistant",
+      title: "Business Not Found | revasy Review Assistant",
       description: "The requested business review page could not be found.",
     };
   }
 
-  const title = `Review ${business.name} on Google | Powered by Revasy`;
+  const title = `Review ${business.name} on Google | Powered by revasy`;
   const description =
     business.tagline ||
     `Leave genuine feedback for ${business.name}. AI organizes your thoughts into a polished Google review in 30 seconds.`;
@@ -31,7 +33,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title,
       description,
       type: "website",
-      siteName: "Revasy Review Assistant",
+      siteName: "revasy Review Assistant",
       ...(business.logoUrl
         ? {
             images: [

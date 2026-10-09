@@ -66,5 +66,5 @@ npx @opennextjs/cloudflare
 # 2. Deploy directly to Cloudflare
 npx wrangler pages deploy .open-next/assets --project-name=revasy
 # Or deploy as a Worker:
-npx wrangler deploy
+npx wrangler deploy 
 ```

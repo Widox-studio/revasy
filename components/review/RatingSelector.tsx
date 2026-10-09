@@ -46,14 +46,14 @@ export const RatingSelector: React.FC<RatingSelectorProps> = ({
               onClick={() => onChange(star)}
               onMouseEnter={() => setHoverRating(star)}
               onMouseLeave={() => setHoverRating(null)}
-              className="p-2 sm:p-2.5 rounded-2xl transition-all duration-150 hover:scale-115 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-teal"
+              className="min-w-[48px] min-h-[48px] flex items-center justify-center p-1.5 sm:p-2 rounded-2xl transition-all duration-150 hover:scale-110 active:scale-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               aria-label={`${star} star${star > 1 ? "s" : ""}: ${RATING_CONFIG[star].label}`}
             >
               <Star
                 className={`${starSize} transition-all duration-200 ${
                   isFilled
                     ? "fill-amber-400 text-amber-500 drop-shadow-[0_4px_12px_rgba(245,158,11,0.45)]"
-                    : "text-hairline hover:text-amber-300"
+                    : "text-stone-300 hover:text-amber-300"
                 }`}
               />
             </button>

@@ -67,50 +67,45 @@ export default function CustomerReviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cafe-50 via-crema to-cafe-100/40 pb-16">
+    <div className="min-h-screen bg-canvas text-ink flex flex-col justify-between pb-safe">
       {/* Top Header */}
-      <header className="sticky top-0 z-30 bg-crema/90 backdrop-blur-md border-b border-cafe-200/80 px-4 py-3">
+      <header className="sticky top-0 z-30 bg-canvas/90 backdrop-blur-md border-b border-hairline px-4 py-3">
         <div className="max-w-md mx-auto flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs font-medium text-espresso-muted hover:text-espresso transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium text-muted hover:text-ink transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Home</span>
+            <span className="font-display font-bold">revasy<span className="text-brand-pink">.</span></span>
           </Link>
 
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-espresso text-cream flex items-center justify-center">
-              <Coffee className="w-4 h-4 text-amber-400" />
-            </div>
-            <span className="font-serif font-bold text-sm text-espresso tracking-tight">
-              {config.cafe.name}
-            </span>
-          </div>
+          <span className="font-display font-semibold text-sm text-ink truncate max-w-[180px]">
+            {config.cafe.name}
+          </span>
 
-          <div className="w-12 text-right">
-            <span className="text-[10px] font-semibold uppercase tracking-wider text-amber-800 bg-amber-100/80 px-2 py-0.5 rounded-full border border-amber-200">
-              Live
-            </span>
-          </div>
+          <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-pill bg-emerald-50 border border-emerald-200 text-emerald-800">
+            Verified
+          </span>
         </div>
       </header>
 
       {/* Main Container */}
-      <main className="max-w-md mx-auto px-4 pt-6">
+      <main className="max-w-md w-full mx-auto px-4 pt-6 pb-8 flex-1">
         {currentStep === "input" ? (
           <div className="space-y-4">
             {/* Branding Banner */}
-            <div className="text-center space-y-1 pb-1">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-espresso text-cream flex items-center justify-center shadow-card border border-espresso-light mb-3">
-                <Coffee className="w-7 h-7 text-amber-400" />
+            <div className="text-center space-y-2 pb-1">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-surface-card border border-hairline flex items-center justify-center shadow-revasy overflow-hidden">
+                <Coffee className="w-7 h-7 text-indigo-600" />
               </div>
-              <h1 className="text-2xl font-serif font-bold text-espresso tracking-tight">
-                {config.cafe.name}
-              </h1>
-              <p className="text-xs text-espresso-muted">
-                {config.cafe.tagline}
-              </p>
+              <div>
+                <h1 className="font-display font-semibold text-2xl text-ink tracking-[-0.02em]">
+                  {config.cafe.name}
+                </h1>
+                <p className="text-xs text-muted max-w-xs mx-auto">
+                  {config.cafe.tagline}
+                </p>
+              </div>
             </div>
 
             <ReviewForm

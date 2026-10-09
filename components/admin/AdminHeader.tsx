@@ -27,23 +27,23 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ adminEmail }) => {
   };
 
   return (
-    <header className="bg-espresso text-cream border-b border-espresso-light sticky top-0 z-30 shadow-subtle">
+    <header className="bg-canvas/90 backdrop-blur-md text-ink border-b border-hairline sticky top-0 z-30">
       <div className="max-w-4xl mx-auto px-4 py-3 sm:py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-amber-600/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+          <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
             <Coffee className="w-5 h-5" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-serif font-bold text-base tracking-wide text-cream">
+              <span className="font-display font-semibold text-base tracking-tight text-ink">
                 {config.cafe.name}
               </span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-pill text-[10px] font-bold uppercase tracking-wider bg-indigo-50 text-indigo-700 border border-indigo-100">
                 <ShieldCheck className="w-3 h-3" />
                 Owner Portal
               </span>
             </div>
-            <p className="text-[11px] text-stone-400 hidden sm:block">
+            <p className="text-[11px] text-muted hidden sm:block">
               AI Google Review Reply Generator
             </p>
           </div>
@@ -51,14 +51,14 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({ adminEmail }) => {
 
         <div className="flex items-center gap-3">
           {adminEmail && (
-            <span className="text-xs text-stone-400 hidden md:inline-block">
+            <span className="text-xs text-muted hidden md:inline-block">
               {adminEmail}
             </span>
           )}
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-stone-300 hover:text-white bg-stone-800/80 hover:bg-stone-700 rounded-lg transition-colors border border-stone-700"
+            className="press flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-muted hover:text-ink bg-surface-card hover:bg-surface-strong rounded-xl transition-colors border border-hairline"
             title="Log out"
           >
             <LogOut className="w-3.5 h-3.5" />

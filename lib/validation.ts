@@ -15,15 +15,18 @@ export const BusinessCreateInputSchema = z.object({
   tagline: z.string().trim().max(120, "Tagline too long").default(""),
   category: z.string().trim().min(2, "Category is required").max(60).default("General Business"),
   description: z.string().trim().max(500).default(""),
+  address: z.string().trim().max(250).optional().default(""),
   googleReviewUrl: z
     .string({ required_error: "Google Review URL is required" })
     .trim()
-    .url("Please provide a valid Google Review URL (https://...)"),
+    .min(5, "Valid review URL required"),
+  placeId: z.string().trim().optional(),
   logoUrl: z.string().optional().default(""),
   accentColor: z
-    .enum(["teal", "pink", "peach", "lavender", "ochre", "mint"])
+    .enum(["teal", "pink", "peach", "lavender", "ochre", "mint", "coral"])
     .default("teal"),
   customPrompts: z.array(z.string().trim().max(100)).max(10).default([]),
+  ownerEmail: z.string().trim().email("Valid client owner email is required").optional(),
 });
 
 export type BusinessCreateInput = z.infer<typeof BusinessCreateInputSchema>;

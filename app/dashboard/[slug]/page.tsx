@@ -22,12 +22,23 @@ import {
   Eye,
   Sliders,
   Layers,
+  ShieldAlert,
+  Power,
+  Globe,
+  CheckCircle2,
+  AlertCircle,
+  Trash2,
+  Bot,
+  Heart,
+  Zap,
+  Lock,
+  MapPin,
+  Ban,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Toast } from "@/components/ui/Toast";
-import { GooglePlaceIdFinder } from "@/components/maps/GooglePlaceIdFinder";
 import { UserButton } from "@clerk/nextjs";
-import { Business } from "@/lib/business-store";
+import { Business, AutoReplyLog } from "@/lib/business-store";
 import { generateQrDataUrl } from "@/lib/qr";
 import { getAccentTheme } from "@/lib/theme";
 
@@ -39,6 +50,8 @@ export default function BusinessDetailPage() {
   const [business, setBusiness] = useState<Business | null>(null);
   const theme = getAccentTheme(business?.accentColor);
   const [isLoading, setIsLoading] = useState(true);
+  const [isForbidden, setIsForbidden] = useState(false);
+  const [hasMultipleLocations, setHasMultipleLocations] = useState(false);
   const [activeTab, setActiveTab] = useState<"replies" | "qr" | "settings">("replies");
 
   // QR Code data URL
@@ -49,7 +62,18 @@ export default function BusinessDetailPage() {
   const [standBackdrop, setStandBackdrop] = useState<"wood" | "marble" | "canvas">("canvas");
   const [standFormat, setStandFormat] = useState<"tent" | "acrylic">("tent");
 
-  // AI Reply Generator State
+  // Auto-Reply Settings & State
+  const [isAutoReplyEnabled, setIsAutoReplyEnabled] = useState(false);
+  const [autoReplyTone, setAutoReplyTone] = useState<"warm" | "professional" | "concise">("warm");
+  const [autoReplyMinRating, setAutoReplyMinRating] = useState<number>(1);
+  const [autoReplySignature, setAutoReplySignature] = useState<string>("");
+  const [isTogglingAutoReply, setIsTogglingAutoReply] = useState(false);
+  const [isSyncingAutoReply, setIsSyncingAutoReply] = useState(false);
+  const [isSavingAutoReplySettings, setIsSavingAutoReplySettings] = useState(false);
+  const [isDisconnectingGoogle, setIsDisconnectingGoogle] = useState(false);
+  const [autoReplyLogs, setAutoReplyLogs] = useState<AutoReplyLog[]>([]);
+
+  // Manual AI Reply Generator State
   const [replyRating, setReplyRating] = useState<number>(5);
   const [reviewerName, setReviewerName] = useState<string>("");
   const [customerReview, setCustomerReview] = useState<string>("");
@@ -64,7 +88,7 @@ export default function BusinessDetailPage() {
   // Settings State
   const [editName, setEditName] = useState("");
   const [editTagline, setEditTagline] = useState("");
-  const [editGoogleUrl, setEditGoogleUrl] = useState("");
+  const [editDescription, setEditDescription] = useState("");
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Toast
@@ -82,6 +106,11 @@ export default function BusinessDetailPage() {
       try {
         const res = await fetch(`/api/businesses/${slug}`);
         if (!res.ok) {
+          if (res.status === 403) {
+            setIsForbidden(true);
+            setIsLoading(false);
+            return;
+          }
           router.push("/dashboard");
           return;
         }
@@ -90,7 +119,36 @@ export default function BusinessDetailPage() {
         setBusiness(biz);
         setEditName(biz.name);
         setEditTagline(biz.tagline || "");
-        setEditGoogleUrl(biz.googleReviewUrl);
+        setEditDescription(biz.description || "");
+
+        // Initialize Auto-Reply State (only enabled if Google connected AND verified location exists)
+        const hasValidLoc = Boolean(biz.googleOAuth?.connected && biz.googleOAuth?.locationName);
+        setIsAutoReplyEnabled(hasValidLoc && (biz.autoReplyConfig?.enabled ?? false));
+        setAutoReplyTone(biz.autoReplyConfig?.tone || "warm");
+        setAutoReplyMinRating(biz.autoReplyConfig?.minRating || 1);
+        setAutoReplySignature(biz.autoReplyConfig?.signature || `— Team ${biz.name}`);
+        setAutoReplyLogs(biz.autoReplyLogs || []);
+
+        // Check if caller has multiple locations
+        try {
+          const listRes = await fetch("/api/businesses");
+          const listData = await listRes.json();
+          if (listData.businesses) {
+            setHasMultipleLocations(listData.businesses.length > 1);
+          }
+        } catch {}
+
+        // Check URL for Google OAuth redirect query param
+        if (typeof window !== "undefined") {
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.get("google_connected") === "true") {
+            showToast("Google Business Profile connected! Autonomous Auto-Reply is active.");
+            window.history.replaceState({}, "", window.location.pathname);
+          } else if (urlParams.get("google_error")) {
+            showToast(`Google OAuth Notice: ${urlParams.get("google_error")}`);
+            window.history.replaceState({}, "", window.location.pathname);
+          }
+        }
 
         // Generate QR Code
         const origin = typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
@@ -108,6 +166,153 @@ export default function BusinessDetailPage() {
     load();
   }, [slug, router]);
 
+  // Toggle Auto-Reply Master Switch
+  const handleToggleAutoReply = async () => {
+    if (!business?.googleOAuth?.connected) {
+      showToast("Please connect your Google Business Profile first to enable auto-replies.");
+      return;
+    }
+
+    if (!business?.googleOAuth?.locationName) {
+      showToast("Cannot enable auto-reply: No Google Business Profile location detected under this Google account.");
+      return;
+    }
+
+    const nextState = !isAutoReplyEnabled;
+    setIsTogglingAutoReply(true);
+
+    try {
+      const res = await fetch(`/api/businesses/${slug}/autoreply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle", enabled: nextState }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed toggling auto-reply");
+
+      setIsAutoReplyEnabled(data.enabled);
+      showToast(
+        data.enabled
+          ? "Autonomous Auto-Reply enabled! revasy AI will reply to incoming reviews."
+          : "Auto-Reply paused. Incoming reviews will await manual response."
+      );
+    } catch (err: any) {
+      showToast(err?.message || "Error toggling auto-reply");
+    } finally {
+      setIsTogglingAutoReply(false);
+    }
+  };
+
+  // Save Auto-Reply Preferences
+  const handleSaveAutoReplySettings = async () => {
+    setIsSavingAutoReplySettings(true);
+    try {
+      const res = await fetch(`/api/businesses/${slug}/autoreply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_settings",
+          tone: autoReplyTone,
+          minRating: autoReplyMinRating,
+          signature: autoReplySignature.trim(),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed saving preferences");
+
+      showToast("Auto-Reply preferences saved successfully!");
+    } catch (err: any) {
+      showToast(err?.message || "Error saving preferences");
+    } finally {
+      setIsSavingAutoReplySettings(false);
+    }
+  };
+
+  // Trigger On-Demand Review Sync & Auto-Reply Run
+  const handleSyncNow = async () => {
+    setIsSyncingAutoReply(true);
+    try {
+      const res = await fetch(`/api/businesses/${slug}/autoreply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "sync_now" }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Sync failed");
+
+      showToast(data.message || "Sync completed!");
+
+      // Refresh business data & logs
+      const refreshRes = await fetch(`/api/businesses/${slug}`);
+      if (refreshRes.ok) {
+        const freshData = await refreshRes.json();
+        setBusiness(freshData.business);
+        setAutoReplyLogs(freshData.business.autoReplyLogs || []);
+      }
+    } catch (err: any) {
+      showToast(err?.message || "Sync error occurred");
+    } finally {
+      setIsSyncingAutoReply(false);
+    }
+  };
+
+  // Disconnect Google Account
+  const handleDisconnectGoogle = async () => {
+    if (!confirm("Are you sure you want to disconnect Google Business Profile? Automated replies will stop.")) {
+      return;
+    }
+
+    setIsDisconnectingGoogle(true);
+    try {
+      const res = await fetch(`/api/auth/google/disconnect?slug=${slug}`, {
+        method: "POST",
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed disconnecting");
+
+      setIsAutoReplyEnabled(false);
+      showToast("Google Business Profile disconnected.");
+
+      // Refresh business
+      const refreshRes = await fetch(`/api/businesses/${slug}`);
+      if (refreshRes.ok) {
+        const freshData = await refreshRes.json();
+        setBusiness(freshData.business);
+      }
+    } catch (err: any) {
+      showToast(err?.message || "Error disconnecting Google");
+    } finally {
+      setIsDisconnectingGoogle(false);
+    }
+  };
+
+  // Clear Auto-Reply Logs History
+  const [isClearingLogs, setIsClearingLogs] = useState(false);
+  const handleClearLogs = async () => {
+    if (!confirm("Are you sure you want to clear the auto-reply activity log history?")) return;
+    setIsClearingLogs(true);
+    try {
+      const res = await fetch(`/api/businesses/${slug}/autoreply`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "clear_logs" }),
+      });
+      if (res.ok) {
+        setAutoReplyLogs([]);
+        showToast("Activity history cleared.");
+      }
+    } catch {
+      showToast("Failed clearing activity history.");
+    } finally {
+      setIsClearingLogs(false);
+    }
+  };
+
+  // Manual AI Reply Generator
   const handleGenerateReplies = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (customerReview.trim().length < 5) {
@@ -164,7 +369,7 @@ export default function BusinessDetailPage() {
         body: JSON.stringify({
           name: editName.trim(),
           tagline: editTagline.trim(),
-          googleReviewUrl: editGoogleUrl.trim(),
+          description: editDescription.trim(),
         }),
       });
       const data = await res.json();
@@ -188,6 +393,43 @@ export default function BusinessDetailPage() {
     showToast("Downloaded high-res QR code image!");
   };
 
+  if (isForbidden) {
+    return (
+      <div className="min-h-screen bg-canvas text-ink flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-3xl border border-hairline p-8 shadow-subtle text-center space-y-5 animate-fadeIn">
+          <div className="w-14 h-14 rounded-2xl bg-red-50 border border-red-200 text-red-600 flex items-center justify-center mx-auto shadow-sm">
+            <ShieldAlert className="w-7 h-7" />
+          </div>
+          <div className="space-y-1.5">
+            <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-pill bg-red-50 border border-red-200 text-red-700">
+              403 Forbidden
+            </span>
+            <h1 className="font-display font-semibold text-xl text-ink">
+              Access Restricted
+            </h1>
+            <p className="text-xs text-muted leading-relaxed">
+              This business dashboard is private and belongs to another merchant account. Your logged-in credentials do not have permission to manage this location.
+            </p>
+          </div>
+          <div className="pt-2 flex flex-col gap-2">
+            <Link
+              href="/dashboard"
+              className="press w-full py-2.5 px-4 bg-primary text-on-primary rounded-xl text-xs font-semibold hover:bg-primary-hover shadow-sm"
+            >
+              Return to My Dashboard
+            </Link>
+            <Link
+              href="/"
+              className="text-xs text-muted hover:text-ink font-medium py-1.5"
+            >
+              Back to Home
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading || !business) {
     return (
       <div className="min-h-screen bg-canvas flex items-center justify-center">
@@ -199,6 +441,8 @@ export default function BusinessDetailPage() {
     );
   }
 
+  const isGoogleConnected = !!business.googleOAuth?.connected;
+
   return (
     <div className="min-h-screen bg-canvas text-ink flex flex-col pb-16">
       {/* Top Navbar */}
@@ -207,10 +451,11 @@ export default function BusinessDetailPage() {
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
-              className="text-muted hover:text-ink transition-colors p-1.5 rounded-lg hover:bg-surface-card"
-              title="Return to dashboard"
+              className="text-muted hover:text-ink transition-colors p-1.5 rounded-lg hover:bg-surface-card flex items-center gap-2"
+              title="Back to Dashboard"
             >
               <ArrowLeft className="w-4 h-4" />
+              <img src="/revasy-logo.png" alt="revasy" className="w-5 h-5 object-contain rounded" />
             </Link>
             <span className="font-display font-semibold text-lg text-ink truncate max-w-[200px] sm:max-w-none">
               {business.name}
@@ -221,6 +466,13 @@ export default function BusinessDetailPage() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <Link
+              href="/dashboard"
+              className="text-xs text-muted hover:text-ink font-medium px-2.5 py-1.5 rounded-lg hover:bg-surface-soft transition-colors"
+            >
+              Dashboard
+            </Link>
+
             <a
               href={`/b/${business.slug}`}
               target="_blank"
@@ -230,13 +482,6 @@ export default function BusinessDetailPage() {
               <span>Guest Review Flow</span>
               <ExternalLink className="w-3.5 h-3.5 text-muted" />
             </a>
-
-            <Link
-              href="/dashboard"
-              className="text-xs text-muted hover:text-ink font-medium px-2.5 py-1.5 rounded-lg hover:bg-surface-soft transition-colors"
-            >
-              All Businesses
-            </Link>
 
             <UserButton afterSignOutUrl="/" />
           </div>
@@ -256,16 +501,24 @@ export default function BusinessDetailPage() {
               )}
             </div>
             <div className="space-y-0.5">
-              <h1 className="font-display font-semibold text-2xl text-ink">
-                {business.name}
-              </h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-display font-semibold text-2xl text-ink">
+                  {business.name}
+                </h1>
+                {isGoogleConnected && isAutoReplyEnabled && (
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 border border-emerald-200 text-emerald-700 animate-fadeIn">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <span>Auto-Reply Active</span>
+                  </span>
+                )}
+              </div>
               <p className="text-xs text-muted">
                 Public Review Link:{" "}
                 <a
                   href={publicUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-brand-pink font-semibold underline underline-offset-2 break-all"
+                  className="text-primary hover:underline font-mono"
                 >
                   {publicUrl}
                 </a>
@@ -273,7 +526,7 @@ export default function BusinessDetailPage() {
             </div>
           </div>
 
-          {/* Stats pills (Miller's Law chunking) */}
+          {/* Stats pills */}
           <div className="flex items-center gap-2.5">
             <div className="bg-white px-3.5 py-2 rounded-xl border border-hairline text-center min-w-[85px]">
               <span className="block font-display font-semibold text-base text-ink">
@@ -290,7 +543,7 @@ export default function BusinessDetailPage() {
           </div>
         </div>
 
-        {/* Tab Navigation with Clear Active State */}
+        {/* Tab Navigation */}
         <div className="flex border-b border-hairline gap-2 overflow-x-auto no-print">
           <button
             onClick={() => setActiveTab("replies")}
@@ -300,8 +553,11 @@ export default function BusinessDetailPage() {
                 : "border-transparent text-muted hover:text-ink"
             }`}
           >
-            <MessageSquareQuote className="w-4 h-4 text-brand-pink" />
-            <span>AI Google Reply Generator</span>
+            <Sparkles className="w-4 h-4 text-primary" />
+            <span>AI Google Auto-Reply</span>
+            {isGoogleConnected && isAutoReplyEnabled && (
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+            )}
           </button>
 
           <button
@@ -329,178 +585,587 @@ export default function BusinessDetailPage() {
           </button>
         </div>
 
-        {/* Tab 1: AI Google Reply Generator */}
+        {/* ========================================================================= */}
+        {/* TAB 1: AI GOOGLE AUTO-REPLY & OAUTH MANAGEMENT                           */}
+        {/* ========================================================================= */}
         {activeTab === "replies" && (
           <div className="space-y-6 animate-fadeIn">
-            <form
-              onSubmit={handleGenerateReplies}
-              className="bg-white rounded-3xl border border-hairline p-6 sm:p-8 shadow-subtle space-y-4"
-            >
-              <div className="space-y-1">
-                <h3 className="font-display font-semibold text-lg text-ink">
-                  AI Google Review Reply Generator for {business.name}
-                </h3>
-                <p className="text-xs text-muted">
-                  Paste incoming reviews from Google Maps. AI will compose 3 hospitality-grade replies tailored to your {business.category}.
-                </p>
-              </div>
+            {/* 1. Google OAuth Connection Banner & Auto-Reply Master Toggle */}
+            <div className="bg-white rounded-3xl border border-hairline p-6 sm:p-8 shadow-subtle space-y-6">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-hairline">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center">
+                      <Bot className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-display font-semibold text-lg text-ink">
+                        Autonomous Google Review Auto-Reply
+                      </h3>
+                      <p className="text-xs text-muted">
+                        Automatically synthesize and publish warm, personalized business replies to customer Google reviews.
+                      </p>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
-                {/* Customer Star rating */}
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold uppercase tracking-wider text-muted">
-                    Customer&apos;s Star Rating
-                  </label>
-                  <div className="flex items-center gap-1.5 p-2 bg-surface-soft rounded-xl border border-hairline">
-                    {[1, 2, 3, 4, 5].map((star) => (
+                {/* Master Autonomous Toggle Switch */}
+                {(() => {
+                  const hasLocation = Boolean(business?.googleOAuth?.connected && business?.googleOAuth?.locationName);
+                  const isActuallyActive = hasLocation && isAutoReplyEnabled;
+
+                  return (
+                    <div
+                      className={`flex items-center gap-3.5 px-4 py-2.5 rounded-2xl border transition-all duration-200 ${
+                        isActuallyActive
+                          ? "bg-emerald-50/80 border-emerald-200/80 shadow-2xs"
+                          : "bg-slate-50 border-slate-200"
+                      }`}
+                    >
+                      <div className="text-right select-none">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              isActuallyActive
+                                ? "bg-emerald-500 animate-pulse"
+                                : "bg-slate-400"
+                            }`}
+                          />
+                          <span
+                            className={`text-xs font-bold font-display ${
+                              isActuallyActive ? "text-emerald-900" : "text-slate-700"
+                            }`}
+                          >
+                            {isActuallyActive ? "Auto-Reply: ON" : "Auto-Reply: OFF"}
+                          </span>
+                        </div>
+                        <span
+                          className={`text-[10px] block font-medium ${
+                            isActuallyActive
+                              ? "text-emerald-700"
+                              : !business?.googleOAuth?.connected
+                              ? "text-slate-500"
+                              : !business?.googleOAuth?.locationName
+                              ? "text-amber-700 font-semibold"
+                              : "text-slate-500"
+                          }`}
+                        >
+                          {isActuallyActive
+                            ? "Autonomous publishing active"
+                            : !business?.googleOAuth?.connected
+                            ? "Connect Google account"
+                            : !business?.googleOAuth?.locationName
+                            ? "Requires Google listing"
+                            : "Auto-publishing paused"}
+                        </span>
+                      </div>
+
                       <button
-                        key={star}
                         type="button"
-                        onClick={() => setReplyRating(star)}
-                        className="p-1.5 rounded-lg hover:scale-115 active:scale-95 transition-transform"
-                        aria-label={`Select ${star} stars`}
+                        onClick={handleToggleAutoReply}
+                        disabled={isTogglingAutoReply || !hasLocation}
+                        className={`relative inline-flex h-7 w-14 shrink-0 rounded-full p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary/20 ${
+                          !hasLocation
+                            ? "bg-slate-200 cursor-not-allowed opacity-60"
+                            : isActuallyActive
+                            ? "bg-emerald-600 shadow-inner cursor-pointer"
+                            : "bg-slate-300 cursor-pointer"
+                        }`}
+                        role="switch"
+                        aria-checked={isActuallyActive}
+                        title={
+                          !hasLocation
+                            ? "Cannot enable: No Google Business Profile location detected"
+                            : isActuallyActive
+                            ? "Click to pause autonomous auto-replies"
+                            : "Click to enable autonomous auto-replies"
+                        }
                       >
-                        <Star
-                          className={`w-6 h-6 ${
-                            star <= replyRating ? "fill-amber-400 text-amber-500" : "text-hairline"
+                        <span
+                          aria-hidden="true"
+                          className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-md ring-0 transition-transform duration-200 ease-in-out ${
+                            isActuallyActive ? "translate-x-7" : "translate-x-0"
                           }`}
                         />
                       </button>
-                    ))}
-                    <span className="text-xs font-semibold text-ink ml-2">
-                      {replyRating} / 5 Stars
+                    </div>
+                  );
+                })()}
+              </div>
+
+              {/* 2. Connection Status */}
+              {!isGoogleConnected ? (
+                /* Disconnected State */
+                <div className="bg-gradient-to-r from-indigo-50/70 via-purple-50/40 to-slate-50 p-6 rounded-2xl border border-indigo-100 space-y-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-10 h-10 rounded-xl bg-white border border-indigo-200 flex items-center justify-center shrink-0 shadow-2xs">
+                      <Globe className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="space-y-1">
+                      <h4 className="font-display font-semibold text-sm text-ink">
+                        Connect Google Business Profile to Activate Auto-Reply
+                      </h4>
+                      <p className="text-xs text-slate-600 leading-relaxed max-w-2xl">
+                        Authorize revasy to access your Google Business Profile (<code>https://www.googleapis.com/auth/business.manage</code>). revasy AI will monitor new customer reviews and publish owner responses automatically on your behalf.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-3 pt-2">
+                    <a
+                      href={`/api/auth/google/authorize?slug=${slug}`}
+                      className="press inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary hover:bg-primary-hover text-on-primary text-xs font-semibold shadow-xs transition-all"
+                    >
+                      {/* Google G Logo */}
+                      <svg className="w-4 h-4 bg-white rounded-full p-0.5" viewBox="0 0 24 24">
+                        <path
+                          fill="#4285F4"
+                          d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                        />
+                        <path
+                          fill="#34A853"
+                          d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                        />
+                        <path
+                          fill="#FBBC05"
+                          d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
+                        />
+                        <path
+                          fill="#EA4335"
+                          d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
+                        />
+                      </svg>
+                      <span>Connect with Google OAuth</span>
+                    </a>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-[11px] text-muted pt-1">
+                    <span className="flex items-center gap-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      Strictly Google Limited Use Compliant
                     </span>
+                    <span>•</span>
+                    <Link href="/privacy" className="hover:text-ink underline">
+                      Privacy Policy &amp; Scopes
+                    </Link>
                   </div>
                 </div>
+              ) : (
+                /* Connected State */
+                <div className="bg-emerald-50/60 p-5 rounded-2xl border border-emerald-200 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <CheckCircle2 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h4 className="font-display font-bold text-sm text-emerald-950">
+                            Google Business Profile Connected
+                          </h4>
+                          <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-200/60 text-emerald-800">
+                            Verified
+                          </span>
+                        </div>
+                        <p className="text-xs text-emerald-800">
+                          Connected as <strong>{business.googleOAuth?.connectedEmail}</strong> • Location: <strong>{business.name}</strong>
+                        </p>
+                      </div>
+                    </div>
 
-                {/* Reviewer name */}
-                <div className="space-y-1.5">
-                  <label htmlFor="reviewer-name" className="block text-xs font-semibold uppercase tracking-wider text-muted">
-                    Reviewer Name <span className="text-muted-soft font-normal">(optional)</span>
-                  </label>
-                  <input
-                    id="reviewer-name"
-                    type="text"
-                    value={reviewerName}
-                    onChange={(e) => setReviewerName(e.target.value)}
-                    placeholder="e.g. Jessica Thompson"
-                    maxLength={80}
-                    className="w-full text-sm text-ink p-2.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
-                  />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleSyncNow}
+                        disabled={isSyncingAutoReply}
+                        className="press inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white hover:bg-emerald-100/50 border border-emerald-300 text-xs font-semibold text-emerald-900 transition-all disabled:opacity-50"
+                      >
+                        <RefreshCw className={`w-3.5 h-3.5 ${isSyncingAutoReply ? "animate-spin text-emerald-700" : ""}`} />
+                        <span>{isSyncingAutoReply ? "Syncing Reviews..." : "Sync & Reply Now"}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleDisconnectGoogle}
+                        disabled={isDisconnectingGoogle}
+                        className="press inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl hover:bg-red-50 text-xs font-medium text-red-600 border border-transparent hover:border-red-200 transition-all"
+                        title="Disconnect Google account"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Disconnect</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {!business.googleOAuth?.locationName && (
+                    <div className="text-xs text-amber-900 bg-amber-50/90 border border-amber-200 rounded-xl p-3 flex items-start gap-2.5">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div className="space-y-0.5">
+                        <p className="font-semibold text-amber-950">
+                          No Google Business Profile locations detected under {business.googleOAuth?.connectedEmail}
+                        </p>
+                        <p className="text-[11px] text-amber-800 leading-relaxed">
+                          Google returned 0 business listings for this Google account. To fetch and reply to real Google reviews, ensure this email is added as an <strong>Owner or Manager</strong> in Google Business Profile at{" "}
+                          <a
+                            href="https://business.google.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline font-bold text-amber-900 hover:text-black inline-flex items-center gap-0.5"
+                          >
+                            business.google.com
+                            <ExternalLink className="w-2.5 h-2.5" />
+                          </a>.
+                        </p>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
+              )}
 
-              {/* Review Text Area */}
-              <div className="space-y-1.5">
-                <label htmlFor="pasted-review" className="block text-xs font-semibold uppercase tracking-wider text-muted">
-                  Paste Customer&apos;s Review Text
-                </label>
-                <textarea
-                  id="pasted-review"
-                  value={customerReview}
-                  onChange={(e) => setCustomerReview(e.target.value)}
-                  rows={4}
-                  maxLength={2500}
-                  placeholder={`e.g. Had an amazing visit at ${business.name}! The atmosphere was warm, staff were attentive, and everything was handled with great care.`}
-                  className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40 resize-y"
-                />
-                <div className="flex items-center justify-between text-[11px] text-muted-soft px-1">
-                  <span>{customerReview.length} / 2500 characters</span>
-                  <span>AI references only genuine customer feedback</span>
-                </div>
-              </div>
-
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                isLoading={isGeneratingReplies}
-                className="shadow-widox"
-              >
-                <Sparkles className="w-4 h-4 mr-2 text-brand-pink" />
-                <span>Generate Tailored Replies</span>
-              </Button>
-            </form>
-
-            {/* Generated Replies Display */}
-            {replies && (
-              <div className="space-y-4 animate-fadeIn">
+              {/* 3. Auto-Reply Preferences Panel */}
+              <div className="pt-2 space-y-4">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-display font-semibold text-lg text-ink">
-                      Generated Replies
-                    </h3>
-                    <p className="text-xs text-muted">
-                      Copy your preferred reply and paste it directly into Google Business Profile.
-                    </p>
-                  </div>
-
+                  <h4 className="font-display font-semibold text-sm text-ink">
+                    Auto-Reply Rules &amp; Tone Settings
+                  </h4>
                   <button
-                    onClick={() => handleGenerateReplies()}
-                    disabled={isGeneratingReplies}
-                    className="press inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 bg-surface-card hover:bg-surface-strong border border-hairline rounded-lg text-ink disabled:opacity-50"
+                    type="button"
+                    onClick={handleSaveAutoReplySettings}
+                    disabled={isSavingAutoReplySettings}
+                    className="press text-xs font-semibold text-primary hover:text-indigo-800 disabled:opacity-50"
                   >
-                    <RefreshCw className={`w-3.5 h-3.5 ${isGeneratingReplies ? "animate-spin" : ""}`} />
-                    <span>Regenerate</span>
+                    {isSavingAutoReplySettings ? "Saving..." : "Save Preferences"}
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {[
-                    { key: "professional", title: "Professional", desc: "Formal hospitality standard", text: replies.professional },
-                    { key: "warm", title: "Warm & Friendly", desc: "Heartfelt neighborhood tone", text: replies.warm },
-                    { key: "concise", title: "Concise", desc: "Direct 2-sentence acknowledgement", text: replies.concise },
-                  ].map((item) => (
-                    <div
-                      key={item.key}
-                      className="bg-white rounded-2xl border border-hairline p-5 shadow-subtle flex flex-col justify-between space-y-4 hover:shadow-card transition-all"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-pill bg-surface-card border border-hairline text-ink">
-                            {item.title}
-                          </span>
+                  {/* Tone Preference */}
+                  <div className="space-y-1.5 bg-surface-soft p-3.5 rounded-2xl border border-hairline">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-muted">
+                      Response Tone
+                    </label>
+                    <div className="grid grid-cols-3 gap-1 pt-1">
+                      {[
+                        { key: "warm", label: "Warm", icon: Heart },
+                        { key: "professional", label: "Formal", icon: Building2 },
+                        { key: "concise", label: "Short", icon: Zap },
+                      ].map((t) => {
+                        const Icon = t.icon;
+                        const isSelected = autoReplyTone === t.key;
+                        return (
                           <button
+                            key={t.key}
                             type="button"
-                            onClick={() => handleCopyReply(item.key, item.text)}
-                            className={`press flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-all ${
-                              copiedReplyKey === item.key
-                                ? "bg-emerald-600 text-white"
-                                : "bg-primary text-on-primary hover:bg-black"
+                            onClick={() => setAutoReplyTone(t.key as typeof autoReplyTone)}
+                            className={`p-2 rounded-xl text-center flex flex-col items-center gap-1 text-xs font-semibold transition-all ${
+                              isSelected
+                                ? "bg-primary text-on-primary shadow-xs"
+                                : "bg-white text-muted hover:text-ink hover:bg-slate-50 border border-hairline"
                             }`}
                           >
-                            {copiedReplyKey === item.key ? (
-                              <>
-                                <Check className="w-3 h-3" />
-                                <span>Copied!</span>
-                              </>
-                            ) : (
-                              <>
-                                <Copy className="w-3 h-3" />
-                                <span>Copy</span>
-                              </>
-                            )}
+                            <Icon className="w-3.5 h-3.5" />
+                            <span>{t.label}</span>
                           </button>
-                        </div>
-                        <p className="text-xs text-muted-soft">{item.desc}</p>
-                        <p className="text-sm text-body leading-relaxed select-text bg-surface-soft/60 p-3.5 rounded-xl border border-hairline/80 font-sans">
-                          {item.text}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center justify-between text-[11px] text-muted-soft pt-1 border-t border-hairline/60">
-                        <span>{item.text.split(/\s+/).filter(Boolean).length} words</span>
-                        <span>{item.text.length} chars</span>
-                      </div>
+                        );
+                      })}
                     </div>
-                  ))}
+                  </div>
+
+                  {/* Rating Scope */}
+                  <div className="space-y-1.5 bg-surface-soft p-3.5 rounded-2xl border border-hairline">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-muted">
+                      Review Scope
+                    </label>
+                    <select
+                      value={autoReplyMinRating}
+                      onChange={(e) => setAutoReplyMinRating(Number(e.target.value))}
+                      className="w-full text-xs text-ink p-2.5 rounded-xl border border-hairline bg-white font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+                    >
+                      <option value={1}>Reply to all ratings (1 to 5 Stars)</option>
+                      <option value={4}>4 &amp; 5 Stars only (Recommended)</option>
+                      <option value={5}>5 Stars only</option>
+                    </select>
+                    <p className="text-[10px] text-muted-soft pt-1">
+                      Lower ratings receive compassionate, helpful customer care replies.
+                    </p>
+                  </div>
+
+                  {/* Brand Signature */}
+                  <div className="space-y-1.5 bg-surface-soft p-3.5 rounded-2xl border border-hairline">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-muted">
+                      Brand Sign-Off Signature
+                    </label>
+                    <input
+                      type="text"
+                      value={autoReplySignature}
+                      onChange={(e) => setAutoReplySignature(e.target.value)}
+                      placeholder={`— Team ${business.name}`}
+                      className="w-full text-xs text-ink p-2.5 rounded-xl border border-hairline bg-white font-medium focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                    <p className="text-[10px] text-muted-soft pt-1">
+                      Appended to the end of each AI synthesized response.
+                    </p>
+                  </div>
                 </div>
               </div>
-            )}
+
+              {/* 4. Live Auto-Reply Activity Stream / Published History */}
+              <div className="pt-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-display font-semibold text-sm text-ink">
+                      Recent Auto-Reply Activity ({autoReplyLogs.length})
+                    </h4>
+                    <p className="text-xs text-muted">
+                      Live audit log of reviews answered automatically on Google Maps.
+                    </p>
+                  </div>
+
+                  {autoReplyLogs.length > 0 && (
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={handleClearLogs}
+                        disabled={isClearingLogs}
+                        className="text-xs text-muted hover:text-red-600 font-medium inline-flex items-center gap-1 transition-colors disabled:opacity-50"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                        <span>Clear History</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSyncNow}
+                        disabled={isSyncingAutoReply}
+                        className="text-xs text-primary font-semibold hover:underline inline-flex items-center gap-1"
+                      >
+                        <RefreshCw className={`w-3 h-3 ${isSyncingAutoReply ? "animate-spin" : ""}`} />
+                        <span>Sync Latest</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {autoReplyLogs.length === 0 ? (
+                  <div className="p-8 bg-surface-soft/50 rounded-2xl border border-dashed border-slate-200 text-center space-y-2">
+                    <Bot className="w-8 h-8 text-muted mx-auto" />
+                    <p className="text-xs text-muted font-medium">
+                      No automated replies published yet.
+                    </p>
+                    <p className="text-[11px] text-muted-soft max-w-sm mx-auto">
+                      Click <strong>&quot;Sync &amp; Reply Now&quot;</strong> above to check for pending Google reviews and let revasy AI compose and publish responses.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {autoReplyLogs.map((log) => (
+                      <div
+                        key={log.id}
+                        className="bg-white rounded-2xl border border-hairline p-4 sm:p-5 shadow-2xs space-y-3"
+                      >
+                        {/* Reviewer & Meta */}
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-full bg-amber-600 text-white font-bold text-xs flex items-center justify-center">
+                              {log.reviewerName.slice(0, 2).toUpperCase()}
+                            </div>
+                            <div>
+                              <span className="font-bold text-xs text-ink block">
+                                {log.reviewerName}
+                              </span>
+                              <div className="flex items-center gap-1 text-amber-400">
+                                <div className="flex">
+                                  {[1, 2, 3, 4, 5].map((s) => (
+                                    <Star
+                                      key={s}
+                                      className={`w-3 h-3 ${
+                                        s <= log.rating
+                                          ? "fill-amber-400 text-amber-400"
+                                          : "text-slate-200"
+                                      }`}
+                                    />
+                                  ))}
+                                </div>
+                                <span className="text-[10px] text-muted ml-1 font-medium">
+                                  {log.reviewDate}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                            <span>Live on Google Maps</span>
+                          </span>
+                        </div>
+
+                        {/* Customer Review text */}
+                        <p className="text-xs text-slate-800 italic bg-surface-soft/40 p-2.5 rounded-xl border border-hairline/60">
+                          &quot;{log.reviewText}&quot;
+                        </p>
+
+                        {/* Indented Published Owner Response */}
+                        <div className="border-l-2 border-primary/50 pl-3 py-1 space-y-1">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="font-bold text-ink">
+                              Response from the owner (revasy AI)
+                            </span>
+                            <span className="text-[10px] text-muted">
+                              Published
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-700 leading-relaxed font-sans">
+                            {log.replyText}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 5. Manual One-Off Reply Generator (Accordion / Sub-section) */}
+            <div className="bg-white rounded-3xl border border-hairline p-6 sm:p-8 shadow-subtle space-y-4">
+              <div className="space-y-1">
+                <h3 className="font-display font-semibold text-base text-ink">
+                  Manual One-Off Reply Drafting Tool
+                </h3>
+                <p className="text-xs text-muted">
+                  Need to compose a custom response to a specific review manually? Paste it below to generate 3 tailored options.
+                </p>
+              </div>
+
+              <form onSubmit={handleGenerateReplies} className="space-y-4 pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Customer Star rating */}
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-muted">
+                      Customer&apos;s Star Rating
+                    </label>
+                    <div className="flex items-center gap-1.5 p-2 bg-surface-soft rounded-xl border border-hairline">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setReplyRating(star)}
+                          className="p-1.5 rounded-lg hover:scale-115 active:scale-95 transition-transform"
+                          aria-label={`Select ${star} stars`}
+                        >
+                          <Star
+                            className={`w-5 h-5 ${
+                              star <= replyRating ? "fill-amber-400 text-amber-500" : "text-hairline"
+                            }`}
+                          />
+                        </button>
+                      ))}
+                      <span className="text-xs font-semibold text-ink ml-2">
+                        {replyRating} / 5 Stars
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Reviewer name */}
+                  <div className="space-y-1.5">
+                    <label htmlFor="reviewer-name" className="block text-xs font-semibold uppercase tracking-wider text-muted">
+                      Reviewer Name <span className="text-muted-soft font-normal">(optional)</span>
+                    </label>
+                    <input
+                      id="reviewer-name"
+                      type="text"
+                      value={reviewerName}
+                      onChange={(e) => setReviewerName(e.target.value)}
+                      placeholder="e.g. Jessica Thompson"
+                      maxLength={80}
+                      className="w-full text-xs text-ink p-2.5 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
+                    />
+                  </div>
+                </div>
+
+                {/* Review Text Area */}
+                <div className="space-y-1.5">
+                  <label htmlFor="pasted-review" className="block text-xs font-semibold uppercase tracking-wider text-muted">
+                    Paste Customer&apos;s Review Text
+                  </label>
+                  <textarea
+                    id="pasted-review"
+                    value={customerReview}
+                    onChange={(e) => setCustomerReview(e.target.value)}
+                    rows={3}
+                    maxLength={2500}
+                    placeholder={`e.g. Had an amazing visit at ${business.name}! The atmosphere was warm and staff were attentive.`}
+                    className="w-full text-xs text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40 resize-y"
+                  />
+                </div>
+
+                <Button
+                  type="submit"
+                  variant="primary"
+                  size="md"
+                  isLoading={isGeneratingReplies}
+                  className="shadow-revasy !text-xs"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5 text-brand-pink" />
+                  <span>Draft 3 Response Variations</span>
+                </Button>
+              </form>
+
+              {/* Generated Replies Display */}
+              {replies && (
+                <div className="space-y-4 pt-3 border-t border-hairline animate-fadeIn">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {[
+                      { key: "professional", title: "Professional", desc: "Formal hospitality standard", text: replies.professional },
+                      { key: "warm", title: "Warm & Friendly", desc: "Heartfelt neighborhood tone", text: replies.warm },
+                      { key: "concise", title: "Concise", desc: "Direct 2-sentence acknowledgement", text: replies.concise },
+                    ].map((item) => (
+                      <div
+                        key={item.key}
+                        className="bg-white rounded-2xl border border-hairline p-4 shadow-subtle flex flex-col justify-between space-y-3"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase tracking-wider px-2 py-0.5 rounded-pill bg-surface-card border border-hairline text-ink">
+                              {item.title}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleCopyReply(item.key, item.text)}
+                              className={`press flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg transition-all ${
+                                copiedReplyKey === item.key
+                                  ? "bg-emerald-600 text-white"
+                                  : "bg-primary text-on-primary hover:bg-primary-hover"
+                              }`}
+                            >
+                              {copiedReplyKey === item.key ? (
+                                <>
+                                  <Check className="w-3 h-3" />
+                                  <span>Copied!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>Copy</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          <p className="text-xs text-body leading-relaxed bg-surface-soft/60 p-3 rounded-xl border border-hairline/80 font-sans">
+                            {item.text}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
-        {/* Tab 2: NFC & QR Stand Kit */}
+        {/* ========================================================================= */}
+        {/* TAB 2: NFC & QR STAND KIT                                                 */}
+        {/* ========================================================================= */}
         {activeTab === "qr" && (
           <div className="space-y-6 animate-fadeIn">
             {/* Stand Controls & Context */}
@@ -599,7 +1264,7 @@ export default function BusinessDetailPage() {
                   </div>
 
                   <p className="text-[10px] text-muted-soft pt-2 border-t border-hairline">
-                    Powered by Widox Review Assistant
+                    Powered by revasy Review Assistant
                   </p>
                 </div>
               </div>
@@ -640,7 +1305,7 @@ export default function BusinessDetailPage() {
                     variant="primary"
                     size="lg"
                     onClick={downloadQrCode}
-                    className="w-full text-sm font-semibold shadow-widox !rounded-xl"
+                    className="w-full text-sm font-semibold shadow-revasy !rounded-xl"
                   >
                     <Download className="w-4 h-4 mr-2 text-brand-mint" />
                     <span>Download High-Res QR Code (.PNG)</span>
@@ -670,7 +1335,9 @@ export default function BusinessDetailPage() {
           </div>
         )}
 
-        {/* Tab 3: Business Settings */}
+        {/* ========================================================================= */}
+        {/* TAB 3: BUSINESS SETTINGS                                                  */}
+        {/* ========================================================================= */}
         {activeTab === "settings" && (
           <form
             onSubmit={handleSaveSettings}
@@ -681,13 +1348,14 @@ export default function BusinessDetailPage() {
                 Business Profile Settings
               </h3>
               <p className="text-xs text-muted">
-                Update your business identity and Google review target URL.
+                Customize your customer-facing presentation details.
               </p>
             </div>
 
+            {/* Editable Presentation Fields */}
             <div className="space-y-1.5">
               <label htmlFor="edit-name" className="block text-xs font-semibold uppercase tracking-wider text-muted">
-                Business Name
+                Business Display Name *
               </label>
               <input
                 id="edit-name"
@@ -695,48 +1363,62 @@ export default function BusinessDetailPage() {
                 required
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
+                placeholder="e.g. Cocova Cafe"
+                className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40 transition-colors"
               />
             </div>
 
             <div className="space-y-1.5">
               <label htmlFor="edit-tagline" className="block text-xs font-semibold uppercase tracking-wider text-muted">
-                Tagline / Vibe
+                Tagline / Hospitality Vibe
               </label>
               <input
                 id="edit-tagline"
                 type="text"
                 value={editTagline}
                 onChange={(e) => setEditTagline(e.target.value)}
+                placeholder="e.g. Artisan Coffee &amp; Warm Moments"
                 className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
               />
             </div>
 
+            {/* Physical Store Address (Locked) */}
             <div className="space-y-1.5">
-              <div className="flex items-center justify-between">
-                <label htmlFor="edit-google" className="block text-xs font-semibold uppercase tracking-wider text-muted">
-                  Google Review URL
-                </label>
-                <GooglePlaceIdFinder
-                  currentUrl={editGoogleUrl}
-                  initialBusinessName={editName}
-                  onSelect={(data) => {
-                    setEditGoogleUrl(data.googleReviewUrl);
-                    if (data.businessName && !editName) {
-                      setEditName(data.businessName);
-                    }
-                    showToast("✓ Updated Google Review URL from map picker!");
-                  }}
-                />
+              <label className="block text-xs font-semibold uppercase tracking-wider text-muted">
+                Physical Store Address
+              </label>
+              <div className="group relative">
+                <div className="w-full text-sm text-ink/80 p-3 rounded-xl border border-hairline bg-slate-50/80 select-none flex items-center justify-between gap-3 transition-colors md:hover:cursor-not-allowed md:hover:bg-slate-100/80">
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <MapPin className="w-4 h-4 text-slate-400 shrink-0" />
+                    <span className="text-slate-700 break-words line-clamp-2 md:truncate font-normal">
+                      {business.address || "Shop- 1, COCOVA, Sardar Patel Marg, Bardoli, Gujarat 394601"}
+                    </span>
+                  </div>
+                  <div className="shrink-0 flex items-center pl-2">
+                    <Lock className="w-4 h-4 text-slate-400 md:group-hover:hidden transition-opacity" />
+                    <Ban className="w-4 h-4 text-rose-500 hidden md:group-hover:block transition-opacity" />
+                  </div>
+                </div>
               </div>
-              <input
-                id="edit-google"
-                type="url"
-                required
-                value={editGoogleUrl}
-                onChange={(e) => setEditGoogleUrl(e.target.value)}
-                className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40"
+            </div>
+
+            {/* Welcome Message / Hospitality Greeting */}
+            <div className="space-y-1.5">
+              <label htmlFor="edit-description" className="block text-xs font-semibold uppercase tracking-wider text-muted">
+                Welcome Message / Hospitality Greeting
+              </label>
+              <textarea
+                id="edit-description"
+                rows={3}
+                value={editDescription}
+                onChange={(e) => setEditDescription(e.target.value)}
+                placeholder="e.g. Welcome to COCOVA! We are passionate about artisanal coffee, fresh bakes, and great hospitality."
+                className="w-full text-sm text-ink p-3 rounded-xl border border-hairline focus:outline-none focus:ring-2 focus:ring-brand-teal bg-surface-soft/40 resize-none"
               />
+              <p className="text-[11px] text-muted-soft">
+                Customer-facing welcome message shown on your smart NFC review stand and feedback portal.
+              </p>
             </div>
 
             <Button
@@ -744,13 +1426,29 @@ export default function BusinessDetailPage() {
               variant="primary"
               size="md"
               isLoading={isSavingSettings}
-              className="shadow-widox"
+              className="shadow-revasy"
             >
               <span>Save Changes</span>
             </Button>
           </form>
         )}
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-hairline bg-surface-soft py-6 px-4 text-center text-xs text-muted no-print">
+        <p>
+          &copy; {new Date().getFullYear()} revasy &bull; Made and maintained by{" "}
+          <a
+            href="https://widox.in"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-primary hover:text-indigo-700 hover:underline transition-colors"
+          >
+            widox
+          </a>{" "}
+          &bull; All rights reserved
+        </p>
+      </footer>
 
       <Toast isOpen={isToastOpen} message={toastMessage} onClose={() => setIsToastOpen(false)} />
     </div>

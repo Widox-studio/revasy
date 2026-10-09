@@ -25,6 +25,7 @@ import {
   ShieldCheck,
   MessageSquare,
   Send,
+  Share2,
 } from "lucide-react";
 import { RatingSelector } from "./RatingSelector";
 import { Toast } from "@/components/ui/Toast";
@@ -32,6 +33,9 @@ import { Button } from "@/components/ui/Button";
 import { Confetti } from "@/components/ui/Confetti";
 import { Business } from "@/lib/business-store";
 import { getAccentTheme } from "@/lib/theme";
+import { copyToClipboard } from "@/lib/clipboard";
+import { GoogleReviewLaunchModal } from "./GoogleReviewLaunchModal";
+import { launchGoogleMapsReview, checkReviewReturn } from "@/lib/maps-launcher";
 
 interface ReviewDrafts {
   natural: string;
@@ -80,6 +84,8 @@ export function BusinessReviewClient({ business }: { business: Business }) {
   const [isCopiedToGoogle, setIsCopiedToGoogle] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [isReviewCompleted, setIsReviewCompleted] = useState(false);
+  const [isLaunchModalOpen, setIsLaunchModalOpen] = useState(false);
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [contactInfo, setContactInfo] = useState("");
 
@@ -91,6 +97,38 @@ export function BusinessReviewClient({ business }: { business: Business }) {
     setToastMessage(msg);
     setIsToastOpen(true);
   };
+
+  // Listen for user returning to the app after submitting their review on Google Maps / Chrome
+  useEffect(() => {
+    const handleReturn = () => {
+      if (typeof document !== "undefined" && document.visibilityState === "visible") {
+        if (checkReviewReturn()) {
+          setIsLaunchModalOpen(false);
+          setIsReviewCompleted(true);
+          setShowConfetti(true);
+          showToast("🎉 Welcome back! Thank you for sharing your review on Google!");
+        }
+      }
+    };
+
+    const handlePageShow = () => {
+      handleReturn();
+    };
+
+    const handleFocus = () => {
+      handleReturn();
+    };
+
+    document.addEventListener("visibilitychange", handleReturn);
+    window.addEventListener("pageshow", handlePageShow);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleReturn);
+      window.removeEventListener("pageshow", handlePageShow);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, []);
 
   const isPromptSelected = (prompt: string): boolean => {
     const normText = customerText.toLowerCase();
@@ -206,21 +244,22 @@ export function BusinessReviewClient({ business }: { business: Business }) {
 
   const handleContinueToGoogle = async () => {
     const textToCopy = getSelectedText();
-    try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(textToCopy);
-      }
-      setIsCopiedToGoogle(true);
-      setShowConfetti(true);
-      showToast("Draft copied! Launching Google Reviews...");
-    } catch {
-      // Fallback
-    }
+    await copyToClipboard(textToCopy);
+    setIsCopiedToGoogle(true);
+    setShowConfetti(true);
+    showToast(`Draft copied! Tap ${rating} stars & paste on Google.`);
 
-    const targetUrl = business.googleReviewUrl || "https://search.google.com";
+    // Open guidance assistant modal
+    setIsLaunchModalOpen(true);
+
+    // Deep link directly to native Google Maps on mobile with Chrome fallback,
+    // or open Google Reviews window on desktop
     setTimeout(() => {
-      window.open(targetUrl, "_blank", "noopener,noreferrer");
-    }, 500);
+      launchGoogleMapsReview({
+        googleReviewUrl: business.googleReviewUrl,
+        placeId: business.placeId,
+      });
+    }, 450);
   };
 
   const handleSendPrivateFeedback = async () => {
@@ -251,14 +290,12 @@ export function BusinessReviewClient({ business }: { business: Business }) {
   };
 
   const handleCopyCard = async (key: string, text: string) => {
-    try {
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(text);
-      }
+    const success = await copyToClipboard(text);
+    if (success) {
       setCopiedKey(key);
       showToast("Copied draft to clipboard!");
       setTimeout(() => setCopiedKey(null), 2000);
-    } catch {
+    } else {
       showToast("Copy failed");
     }
   };
@@ -295,14 +332,14 @@ export function BusinessReviewClient({ business }: { business: Business }) {
             <span className="font-display font-bold">revasy<span className="text-brand-pink">.</span></span>
           </Link>
 
-          <span className="font-display font-semibold text-sm text-ink truncate max-w-[180px]">
-            {business.name}
-          </span>
-
-          <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-pill border ${theme.badge}`}>
-            <Check className="w-3 h-3 text-brand-mint" />
-            Verified
-          </span>
+          <div className="flex items-center gap-1.5 min-w-0 max-w-[210px]">
+            <span className="font-display font-semibold text-sm text-ink truncate">
+              {business.name}
+            </span>
+            <span title="Verified Business" className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-emerald-50 border border-emerald-200 shrink-0">
+              <Check className="w-2.5 h-2.5 text-emerald-600 stroke-[3]" />
+            </span>
+          </div>
         </div>
       </header>
 
@@ -361,7 +398,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
           <div className="space-y-5 animate-fadeIn">
             {/* Business Hero Banner */}
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-surface-card border border-hairline flex items-center justify-center shadow-widox overflow-hidden">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-surface-card border border-hairline flex items-center justify-center shadow-revasy overflow-hidden">
                 {business.logoUrl ? (
                   <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
                 ) : (
@@ -396,7 +433,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                       We care about your experience at {business.name}. If something wasn&apos;t right, you can send private feedback directly to management so we can resolve it immediately.
                     </p>
                     <a
-                      href={`mailto:${business.ownerEmail || "contact@widox.in"}?subject=${encodeURIComponent(`Private Customer Feedback - ${business.name}`)}&body=${encodeURIComponent(`Rating: ${rating}/5\nFeedback: ${customerText || "I would like to share feedback privately."}`)}`}
+                      href={`mailto:${business.ownerEmail || "widoxstudio@gmail.com"}?subject=${encodeURIComponent(`Private Customer Feedback - ${business.name}`)}&body=${encodeURIComponent(`Rating: ${rating}/5\nFeedback: ${customerText || "I would like to share feedback privately."}`)}`}
                       className="inline-flex items-center justify-center gap-1.5 w-full py-2 px-3 rounded-lg text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm"
                     >
                       <Mail className="w-3.5 h-3.5" />
@@ -513,6 +550,88 @@ export function BusinessReviewClient({ business }: { business: Business }) {
               </div>
             </div>
           </div>
+        ) : isReviewCompleted ? (
+          /* Public Review Completed View */
+          <div className="space-y-5 animate-fadeIn">
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-hairline shadow-revasy text-center space-y-5">
+              {/* Contributor Badge */}
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-pill bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Verified Google Review Contributor</span>
+              </div>
+
+              {/* Glowing animated check icon */}
+              <div className="relative w-20 h-20 mx-auto">
+                <div className="absolute inset-0 rounded-full bg-emerald-400/20 animate-ping opacity-30" />
+                <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 flex items-center justify-center relative shadow-sm">
+                  <CheckCircle2 className="w-11 h-11 text-emerald-600" />
+                </div>
+              </div>
+
+              {/* Title & Appreciative Copy */}
+              <div className="space-y-2">
+                <h3 className="font-display font-bold text-2xl text-ink">
+                  Thank You for Your Review! 🎉
+                </h3>
+                <p className="text-xs text-muted max-w-sm mx-auto leading-relaxed">
+                  Your feedback was shared for <strong>{business.name}</strong>. Authentic reviews like yours empower neighborhood businesses and help neighbors make great choices!
+                </p>
+              </div>
+
+              {/* Review Card Summary */}
+              <div className="p-4 rounded-2xl bg-surface-soft/60 border border-hairline text-left space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: rating }).map((_, i) => (
+                      <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-500" />
+                    ))}
+                  </div>
+                  <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    Shared on Google Maps
+                  </span>
+                </div>
+                <p className="text-xs text-ink/90 italic leading-relaxed line-clamp-3 select-text">
+                  &ldquo;{getSelectedText()}&rdquo;
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-2 flex flex-col gap-2.5">
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="w-full text-xs font-semibold !rounded-xl"
+                  onClick={() => {
+                    if (typeof navigator !== "undefined" && navigator.share) {
+                      navigator.share({
+                        title: `Review ${business.name}`,
+                        text: `Check out ${business.name} on Revasy!`,
+                        url: window.location.href,
+                      }).catch(() => {});
+                    } else {
+                      copyToClipboard(window.location.href);
+                      showToast("Page link copied to clipboard!");
+                    }
+                  }}
+                >
+                  <Share2 className="w-4 h-4 mr-1.5" />
+                  <span>Share This Business Page</span>
+                </Button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsReviewCompleted(false);
+                    setCustomerText("");
+                    setCurrentStep("input");
+                  }}
+                  className="w-full text-xs font-semibold py-2.5 px-4 rounded-xl bg-surface-card hover:bg-surface-strong text-ink border border-hairline transition-colors"
+                >
+                  Write Another Review
+                </button>
+              </div>
+            </div>
+          </div>
         ) : (
           /* Results View: 3 Review Drafts */
           <div className="space-y-5 animate-fadeIn">
@@ -542,7 +661,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                   Rather than posting publicly to Google, you can resolve your concern directly with the owner of {business.name}.
                 </p>
                 <a
-                  href={`mailto:${business.ownerEmail || "contact@widox.in"}?subject=${encodeURIComponent(`Customer Experience Feedback - ${business.name}`)}&body=${encodeURIComponent(`Selected Review Draft:\n"${getSelectedText()}"\n\nOriginal Notes: ${customerText}\nRating: ${rating}/5`)}`}
+                  href={`mailto:${business.ownerEmail || "widoxstudio@gmail.com"}?subject=${encodeURIComponent(`Customer Experience Feedback - ${business.name}`)}&body=${encodeURIComponent(`Selected Review Draft:\n"${getSelectedText()}"\n\nOriginal Notes: ${customerText}\nRating: ${rating}/5`)}`}
                   className="inline-flex items-center justify-center gap-2 w-full py-2.5 px-4 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white transition-colors shadow-sm"
                 >
                   <Mail className="w-4 h-4" />
@@ -719,7 +838,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                   <Button
                     variant="primary"
                     size="lg"
-                    className="w-full text-base font-semibold shadow-widox !rounded-2xl"
+                    className="w-full text-base font-semibold shadow-revasy !rounded-2xl"
                     onClick={handleSendPrivateFeedback}
                     isLoading={isSubmittingFeedback}
                   >
@@ -740,7 +859,7 @@ export function BusinessReviewClient({ business }: { business: Business }) {
                 <Button
                   variant="primary"
                   size="lg"
-                  className="w-full text-base font-semibold shadow-widox !rounded-2xl"
+                  className="w-full text-base font-semibold shadow-revasy !rounded-2xl"
                   onClick={handleContinueToGoogle}
                 >
                   {isCopiedToGoogle ? (
@@ -800,6 +919,21 @@ export function BusinessReviewClient({ business }: { business: Business }) {
           </div>
         )}
       </main>
+
+      <GoogleReviewLaunchModal
+        isOpen={isLaunchModalOpen}
+        onClose={() => setIsLaunchModalOpen(false)}
+        businessName={business.name}
+        rating={rating}
+        reviewText={getSelectedText()}
+        googleReviewUrl={business.googleReviewUrl}
+        placeId={business.placeId}
+        onCompleted={() => {
+          setShowConfetti(true);
+          setIsReviewCompleted(true);
+          showToast("🎉 Thank you for sharing your review on Google!");
+        }}
+      />
 
       <Toast isOpen={isToastOpen} message={toastMessage} onClose={() => setIsToastOpen(false)} />
     </div>
