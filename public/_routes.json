@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "include": [
+    "/*"
+  ],
+  "exclude": [
+    "/_next/static/*",
+    "/uploads/*",
+    "/apple-touch-icon.png",
+    "/favicon-32x32.png",
+    "/favicon.ico",
+    "/icon-192.png",
+    "/icon-512.png",
+    "/revasy-logo.png"
+  ]
+}

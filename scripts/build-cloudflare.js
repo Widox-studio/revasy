@@ -264,14 +264,16 @@ if (fs.existsSync(workerOutPath)) {
 
       // Serve static assets directly if available
       const url = new URL(request.url);
-      if (env && env.ASSETS && (
+      const isStaticAsset =
         url.pathname.startsWith("/_next/static/") ||
-        url.pathname === "/favicon.ico" ||
-        url.pathname === "/icon-192.png" ||
-        url.pathname === "/icon-512.png" ||
-        url.pathname.startsWith("/uploads/")
-      )) {
-        return await env.ASSETS.fetch(request);
+        url.pathname.startsWith("/uploads/") ||
+        /\.(png|jpg|jpeg|gif|svg|ico|webp|webmanifest|txt|xml|woff2?|ttf|css|js)$/.test(url.pathname);
+
+      if (env && env.ASSETS && isStaticAsset) {
+        const assetRes = await env.ASSETS.fetch(request);
+        if (assetRes.status !== 404) {
+          return assetRes;
+        }
       }
   `;
 
@@ -305,21 +307,37 @@ export { worker_default as default };`
 }
 
 console.log("=== 5. Writing _routes.json ===");
+const publicDir = path.join(__dirname, "..", "public");
+const staticExcludes = [
+  "/_next/static/*",
+  "/uploads/*"
+];
+
+if (fs.existsSync(publicDir)) {
+  function scanStaticFiles(dir, prefix = "") {
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        scanStaticFiles(path.join(dir, entry.name), `${prefix}/${entry.name}`);
+      } else {
+        staticExcludes.push(`${prefix}/${entry.name}`);
+      }
+    }
+  }
+  scanStaticFiles(publicDir);
+}
+
+const uniqueExcludes = Array.from(new Set(staticExcludes));
 const routesJson = {
   version: 1,
   include: ["/*"],
-  exclude: [
-    "/_next/static/*",
-    "/favicon.ico",
-    "/icon-192.png",
-    "/icon-512.png",
-    "/uploads/*",
-  ],
+  exclude: uniqueExcludes,
 };
 fs.writeFileSync(
   path.join(".open-next", "assets", "_routes.json"),
   JSON.stringify(routesJson, null, 2),
   "utf8"
 );
+console.log("Excluded static routes in _routes.json:", uniqueExcludes);
 
 console.log("=== Build for Cloudflare Pages Complete! ===");
