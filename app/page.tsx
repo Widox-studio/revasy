@@ -629,7 +629,7 @@ export default function RevasySaaSHomePage() {
                 className="w-full sm:w-auto"
               >
                 <Button variant="outline" size="lg" className="w-full sm:w-auto text-sm font-semibold px-6 py-3.5 border-white/40 text-white hover:bg-white/10">
-                  <span>Contact Concierge Support</span>
+                  <span>Contact Widox Support</span>
                 </Button>
               </a>
             </div>

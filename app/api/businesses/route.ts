@@ -48,7 +48,7 @@ export async function POST(req: Request) {
       return NextResponse.json(
         {
           error:
-            "Business onboarding is white-glove managed by revasy Concierge. Super-admin access required.",
+            "Business onboarding is white-glove managed by Widox. Super-admin access required.",
         },
         { status: 403 }
       );
