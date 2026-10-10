@@ -1,55 +1,86 @@
+function getEnv(key: string, fallback = ""): string {
+  try {
+    if (typeof process !== "undefined" && process?.env && process.env[key]) {
+      return process.env[key]!;
+    }
+    const cf = (globalThis as any).env || (globalThis as any).CLOUDFLARE_ENV;
+    if (cf && typeof cf[key] === "string" && cf[key]) {
+      return cf[key];
+    }
+  } catch {}
+  return fallback;
+}
+
 export const config = {
   cafe: {
     name: "Cocova Cafe",
     tagline: "Artisan Coffee & Warm Moments",
     description: "Handcrafted coffee, artisan pastries, and heartfelt hospitality.",
   },
-  googleReviewUrl:
-    process.env.COCOVA_GOOGLE_REVIEW_URL ||
-    "https://search.google.com/local/writereview?placeid=ChIJcocova_demo_place",
-  admin: {
-    email: process.env.ADMIN_EMAIL || "widoxstudio@gmail.com",
-    password: process.env.ADMIN_PASSWORD || "widox@1502",
-    sessionSecret:
-      process.env.SESSION_SECRET ||
-      "cocova-cafe-session-secret-change-in-production-2026-xyz",
-    cookieName: "cocova_session",
-    sessionMaxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+  get googleReviewUrl() {
+    return (
+      getEnv("COCOVA_GOOGLE_REVIEW_URL") ||
+      "https://search.google.com/local/writereview?placeid=ChIJcocova_demo_place"
+    );
   },
-  google: {
-    clientId: process.env.GOOGLE_CLIENT_ID || "",
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
-    redirectUri:
-      process.env.GOOGLE_REDIRECT_URI ||
-      `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/api/auth/google/callback`,
-    scopes: [
-      "openid",
-      "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/userinfo.profile",
-      "https://www.googleapis.com/auth/business.manage",
-    ],
+  get admin() {
+    return {
+      email: getEnv("ADMIN_EMAIL", "widoxstudio@gmail.com"),
+      password: getEnv("ADMIN_PASSWORD", "widox@1502"),
+      sessionSecret: getEnv(
+        "SESSION_SECRET",
+        "cocova-cafe-session-secret-change-in-production-2026-xyz"
+      ),
+      cookieName: "cocova_session",
+      sessionMaxAgeSeconds: 60 * 60 * 24 * 7, // 7 days
+    };
   },
-  openai: {
-    apiKey: process.env.OPENAI_API_KEY || "",
-    model: process.env.OPENAI_MODEL || "gpt-4o-mini",
+  get google() {
+    return {
+      clientId: getEnv("GOOGLE_CLIENT_ID"),
+      clientSecret: getEnv("GOOGLE_CLIENT_SECRET"),
+      redirectUri:
+        getEnv("GOOGLE_REDIRECT_URI") ||
+        `${getEnv("NEXT_PUBLIC_APP_URL", "https://revasy.widox.in")}/api/auth/google/callback`,
+      scopes: [
+        "openid",
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile",
+        "https://www.googleapis.com/auth/business.manage",
+      ],
+    };
   },
-  gemini: {
-    apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY || "",
-    model: process.env.GEMINI_MODEL || "gemini-1.5-flash",
+  get openai() {
+    return {
+      apiKey: getEnv("OPENAI_API_KEY"),
+      model: getEnv("OPENAI_MODEL", "gpt-4o-mini"),
+    };
   },
-  groq: {
-    apiKey: process.env.GROQ_API_KEY || "",
-    model: process.env.GROQ_MODEL || "llama-3.3-70b-versatile",
+  get gemini() {
+    return {
+      apiKey: getEnv("GEMINI_API_KEY") || getEnv("GOOGLE_API_KEY"),
+      model: getEnv("GEMINI_MODEL", "gemini-1.5-flash"),
+    };
   },
-  openrouter: {
-    apiKey: process.env.OPENROUTER_API_KEY || "",
-    model: process.env.OPENROUTER_MODEL || "meta-llama/llama-3.3-70b-instruct",
+  get groq() {
+    return {
+      apiKey: getEnv("GROQ_API_KEY"),
+      model: getEnv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+    };
   },
-  cloudflare: {
-    accountId: process.env.CLOUDFLARE_ACCOUNT_ID || "38d1ceb6731de305dc93daf3659e371c",
-    apiToken: process.env.CLOUDFLARE_API_TOKEN || "",
-    workerUrl: process.env.CLOUDFLARE_WORKER_URL || "https://revasy-api.widoxstudio.workers.dev",
-    model: process.env.CLOUDFLARE_AI_MODEL || "@cf/meta/llama-3-8b-instruct",
+  get openrouter() {
+    return {
+      apiKey: getEnv("OPENROUTER_API_KEY"),
+      model: getEnv("OPENROUTER_MODEL", "meta-llama/llama-3.3-70b-instruct"),
+    };
+  },
+  get cloudflare() {
+    return {
+      accountId: getEnv("CLOUDFLARE_ACCOUNT_ID", "38d1ceb6731de305dc93daf3659e371c"),
+      apiToken: getEnv("CLOUDFLARE_API_TOKEN"),
+      workerUrl: getEnv("CLOUDFLARE_WORKER_URL", "https://revasy-api.widoxstudio.workers.dev"),
+      model: getEnv("CLOUDFLARE_AI_MODEL", "@cf/meta/llama-3-8b-instruct"),
+    };
   },
   rateLimits: {
     reviewGenerate: {

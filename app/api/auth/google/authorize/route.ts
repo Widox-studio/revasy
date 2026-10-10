@@ -33,7 +33,14 @@ export async function GET(req: Request) {
   }
 
   // 4. Validate Google Client Credentials
-  if (!config.google.clientId || !config.google.clientSecret) {
+  const clientId = config.google.clientId || process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = config.google.clientSecret || process.env.GOOGLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    console.error("[Google OAuth Error]: Missing credentials", {
+      hasClientId: Boolean(clientId),
+      hasClientSecret: Boolean(clientSecret),
+    });
     return NextResponse.redirect(
       new URL(`${returnUrl}?google_error=oauth_credentials_not_configured`, req.url)
     );
