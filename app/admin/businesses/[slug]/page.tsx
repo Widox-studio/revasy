@@ -1,7 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { getAdminSession } from "@/lib/auth";
 import { getBusinessBySlugAsync } from "@/lib/business-store";
-import { generateQrDataUrl } from "@/lib/qr";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { BusinessManager } from "@/components/admin/BusinessManager";
 
@@ -14,11 +13,19 @@ interface BusinessDetailPageProps {
 }
 
 export async function generateMetadata({ params }: BusinessDetailPageProps) {
-  const business = await getBusinessBySlugAsync(params.slug);
-  return {
-    title: business ? `Configure ${business.name} | revasy Ops` : "Configure Business | revasy Ops",
-    description: "Location telemetry, Place ID configuration, and stand URLs.",
-  };
+  try {
+    const slug = params?.slug;
+    const business = slug ? await getBusinessBySlugAsync(slug) : null;
+    return {
+      title: business ? `Configure ${business.name} | revasy Ops` : "Configure Business | revasy Ops",
+      description: "Location telemetry, Place ID configuration, and stand URLs.",
+    };
+  } catch {
+    return {
+      title: "Configure Business | revasy Ops",
+      description: "Location telemetry, Place ID configuration, and stand URLs.",
+    };
+  }
 }
 
 export default async function BusinessDetailPage({ params }: BusinessDetailPageProps) {
@@ -32,14 +39,18 @@ export default async function BusinessDetailPage({ params }: BusinessDetailPageP
     redirect("/dashboard");
   }
 
-  const business = await getBusinessBySlugAsync(params.slug);
+  const slug = params?.slug;
+  if (!slug) {
+    notFound();
+  }
+
+  const business = await getBusinessBySlugAsync(slug);
 
   if (!business) {
     notFound();
   }
 
-  const standUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/b/${business.slug}`;
-  const qrDataUrl = await generateQrDataUrl(standUrl);
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || "https://revasy.widox.in";
 
   return (
     <div className="min-h-screen bg-canvas flex flex-col">
@@ -47,8 +58,7 @@ export default async function BusinessDetailPage({ params }: BusinessDetailPageP
       <main className="flex-1 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
         <BusinessManager
           initialBusiness={business}
-          userAppUrl=""
-          qrDataUrl={qrDataUrl}
+          userAppUrl={appUrl}
         />
       </main>
     </div>

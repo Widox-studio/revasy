@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -31,15 +31,18 @@ import { Toast, ToastType } from "@/components/ui/Toast";
 interface BusinessManagerProps {
   initialBusiness: Business;
   userAppUrl: string;
-  qrDataUrl: string;
+  qrDataUrl?: string;
 }
 
 export function BusinessManager({
   initialBusiness,
   userAppUrl,
-  qrDataUrl,
+  qrDataUrl = "",
 }: BusinessManagerProps) {
   const router = useRouter();
+
+  // QR Code State (Client Generated with fallback)
+  const [currentQr, setCurrentQr] = useState<string>(qrDataUrl);
 
   // Form State
   const [business, setBusiness] = useState<Business>(initialBusiness);
@@ -84,6 +87,18 @@ export function BusinessManager({
   const baseUrl = typeof window !== "undefined" ? window.location.origin : (userAppUrl || "");
   const standUrl = `${baseUrl}/b/${business.slug}`;
   const clientDashboardUrl = `/dashboard/${business.slug}`;
+
+  // Automatically ensure QR code is generated on client
+  useEffect(() => {
+    if (!currentQr && standUrl) {
+      import("@/lib/qr")
+        .then(({ generateQrDataUrl }) => generateQrDataUrl(standUrl))
+        .then((url) => {
+          if (url) setCurrentQr(url);
+        })
+        .catch(() => {});
+    }
+  }, [standUrl, currentQr]);
 
   // Save changes via API
   const handleSave = async () => {
@@ -607,9 +622,9 @@ export function BusinessManager({
               </h4>
               <p className="text-[10px] text-muted mb-3">Scan to Review Us on Google</p>
 
-              {qrDataUrl ? (
+              {currentQr ? (
                 <img
-                  src={qrDataUrl}
+                  src={currentQr}
                   alt="Review QR Code"
                   className="w-36 h-36 mx-auto rounded-lg"
                 />
@@ -628,9 +643,9 @@ export function BusinessManager({
             </div>
 
             <div className="flex items-center justify-center gap-2">
-              {qrDataUrl && (
+              {currentQr && (
                 <a
-                  href={qrDataUrl}
+                  href={currentQr}
                   download={`${business.slug}-qr-code.png`}
                   className="inline-flex"
                 >
