@@ -248,6 +248,8 @@ if (fs.existsSync(workerOutPath)) {
   const assetCheck = `
       // Sync environment variables and Cloudflare bindings
       if (env) {
+        globalThis.env = env;
+        globalThis.CLOUDFLARE_ENV = env;
         if (env.DB) globalThis.DB = env.DB;
         if (env.AI) globalThis.AI = env.AI;
         for (const [k, v] of Object.entries(env)) {

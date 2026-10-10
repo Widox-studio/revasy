@@ -3,6 +3,10 @@ function getEnv(key: string, fallback = ""): string {
     if (typeof process !== "undefined" && process?.env && process.env[key]) {
       return process.env[key]!;
     }
+    const als = (globalThis as any)[Symbol.for("__cloudflare-context__")];
+    if (als?.env && typeof als.env[key] === "string" && als.env[key]) {
+      return als.env[key];
+    }
     const cf = (globalThis as any).env || (globalThis as any).CLOUDFLARE_ENV;
     if (cf && typeof cf[key] === "string" && cf[key]) {
       return cf[key];
