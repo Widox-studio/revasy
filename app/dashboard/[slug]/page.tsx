@@ -34,10 +34,11 @@ import {
   Lock,
   MapPin,
   Ban,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Toast } from "@/components/ui/Toast";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useClerk } from "@clerk/nextjs";
 import { Business, AutoReplyLog } from "@/lib/business-store";
 import { generateQrDataUrl } from "@/lib/qr";
 import { getAccentTheme } from "@/lib/theme";
@@ -397,6 +398,22 @@ export default function BusinessDetailPage() {
     showToast("Downloaded high-res QR code image!");
   };
 
+  const { signOut } = useClerk();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch {}
+
+    try {
+      await signOut({ redirectUrl: "/login" });
+    } catch {
+      window.location.href = "/login";
+    }
+  };
+
   if (isForbidden) {
     return (
       <div className="min-h-screen bg-canvas text-ink flex items-center justify-center p-4">
@@ -487,7 +504,16 @@ export default function BusinessDetailPage() {
               <ExternalLink className="w-3.5 h-3.5 text-muted" />
             </a>
 
-            <UserButton afterSignOutUrl="/" />
+            <UserButton afterSignOutUrl="/login" />
+
+            <button
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="press p-2 text-muted hover:text-ink hover:bg-surface-card rounded-xl border border-hairline transition-colors disabled:opacity-50"
+              title="Log out"
+            >
+              <LogOut className={`w-4 h-4 ${isLoggingOut ? "animate-spin" : ""}`} />
+            </button>
           </div>
         </div>
       </header>

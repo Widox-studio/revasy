@@ -20,7 +20,7 @@ import {
   Mail,
   MessageCircle,
 } from "lucide-react";
-import { UserButton } from "@clerk/nextjs";
+import { UserButton, useClerk } from "@clerk/nextjs";
 import { Business } from "@/lib/business-store";
 
 export default function DashboardOverviewPage() {
@@ -56,10 +56,20 @@ export default function DashboardOverviewPage() {
     fetchBiz();
   }, [router]);
 
+  const { signOut } = useClerk();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const handleLogout = async () => {
-    await fetch("/api/admin/logout", { method: "POST" });
-    router.push("/login");
-    router.refresh();
+    setIsLoggingOut(true);
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch {}
+
+    try {
+      await signOut({ redirectUrl: "/login" });
+    } catch {
+      window.location.href = "/login";
+    }
   };
 
   const getCategoryIcon = (category: string) => {
@@ -112,14 +122,15 @@ export default function DashboardOverviewPage() {
           </div>
 
           <div className="flex items-center gap-3">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton afterSignOutUrl="/login" />
 
             <button
               onClick={handleLogout}
-              className="press p-2 text-muted hover:text-ink hover:bg-surface-card rounded-xl border border-hairline transition-colors"
+              disabled={isLoggingOut}
+              className="press p-2 text-muted hover:text-ink hover:bg-surface-card rounded-xl border border-hairline transition-colors disabled:opacity-50"
               title="Log out"
             >
-              <LogOut className="w-4 h-4" />
+              <LogOut className={`w-4 h-4 ${isLoggingOut ? "animate-spin" : ""}`} />
             </button>
           </div>
         </div>
