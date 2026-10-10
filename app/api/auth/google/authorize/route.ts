@@ -36,7 +36,7 @@ export async function GET(req: Request) {
   const clientId = config.google.clientId || process.env.GOOGLE_CLIENT_ID;
   const clientSecret = config.google.clientSecret || process.env.GOOGLE_CLIENT_SECRET;
 
-  if (searchParams.get("debug") === "1" || !clientId || !clientSecret) {
+  if (searchParams.get("debug") === "1") {
     const als = (globalThis as any)[Symbol.for("__cloudflare-context__")];
     return NextResponse.json(
       {
@@ -53,11 +53,18 @@ export async function GET(req: Request) {
         globalEnvKeys: (globalThis as any).env
           ? Object.keys((globalThis as any).env).sort()
           : null,
-        cfEnvKeys: (globalThis as any).CLOUDFLARE_ENV
-          ? Object.keys((globalThis as any).CLOUDFLARE_ENV).sort()
-          : null,
       },
       { status: 200 }
+    );
+  }
+
+  if (!clientId || !clientSecret) {
+    console.error("[Google OAuth Error]: Missing credentials", {
+      hasClientId: Boolean(clientId),
+      hasClientSecret: Boolean(clientSecret),
+    });
+    return NextResponse.redirect(
+      new URL(`${returnUrl}?google_error=oauth_credentials_not_configured`, req.url)
     );
   }
 
