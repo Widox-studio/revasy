@@ -144,10 +144,14 @@ export default function DashboardOverviewPage() {
             ))}
           </div>
         ) : businesses.length === 0 ? (
-          /* Concierge White-Glove Onboarding in Progress */
+          /* Widox Team White-Glove Onboarding in Progress */
           <div className="max-w-2xl mx-auto bg-white rounded-3xl border border-hairline p-6 sm:p-10 shadow-subtle text-center space-y-6 animate-fadeIn my-6">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-50 border border-indigo-100 mx-auto flex items-center justify-center text-indigo-600 shadow-sm">
-              <Sparkles className="w-8 h-8" />
+            <div className="w-20 h-20 rounded-2xl bg-white border border-hairline mx-auto flex items-center justify-center shadow-sm overflow-hidden p-2.5">
+              <img
+                src="/revasy-logo.png"
+                alt="revasy"
+                className="w-full h-full object-contain"
+              />
             </div>
 
             <div className="space-y-2">
@@ -159,7 +163,7 @@ export default function DashboardOverviewPage() {
                 Your Review Assistant Is Being Configured
               </h1>
               <p className="text-sm text-body leading-relaxed max-w-lg mx-auto">
-                Welcome to revasy! Our concierge team is currently setting up your verified Google Place ID integration, NFC/QR print assets, and tailored AI review prompt models.
+                Welcome to revasy! The Widox team is currently setting up your verified Google Place ID integration, NFC/QR print assets, and tailored AI review prompt models.
               </p>
             </div>
 
@@ -186,7 +190,7 @@ export default function DashboardOverviewPage() {
                   <div className="w-4 h-4 rounded-full border-2 border-indigo-600 border-t-transparent animate-spin mt-0.5 shrink-0" />
                   <div>
                     <p className="text-xs font-semibold text-indigo-900">Google Place ID &amp; Location Linking</p>
-                    <p className="text-[11px] text-muted">Concierge linking your exact Google review destination.</p>
+                    <p className="text-[11px] text-muted">Widox team linking your exact Google review destination.</p>
                   </div>
                 </div>
 
@@ -204,23 +208,41 @@ export default function DashboardOverviewPage() {
             <div className="pt-2 space-y-3">
               <p className="text-xs text-muted font-medium">Need immediate onboarding or have questions?</p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <a
-                  href={`https://wa.me/?text=${encodeURIComponent(
-                    `Hello revasy Concierge, I registered my account (${userEmail || ""}) and would like to configure my business dashboard.`
-                  )}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="press w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  <span>Chat with Concierge Team</span>
-                </a>
+                {/* 
+                  =============================================================================
+                  WIDOX WHATSAPP NUMBER:
+                  To add your WhatsApp number, put it in the quotes below (e.g., "919876543210" with country code).
+                  =============================================================================
+                */}
+                {(() => {
+                  const WIDOX_WHATSAPP_NUMBER = "9428363238"; // <-- PLACE YOUR WHATSAPP NUMBER HERE (e.g. "919876543210")
+                  const cleanPhone = WIDOX_WHATSAPP_NUMBER.replace(/\D/g, "");
+                  const whatsappHref = cleanPhone
+                    ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(
+                        `Hello Widox Team, I registered my account (${userEmail || ""}) on revasy and would like to configure my business dashboard.`
+                      )}`
+                    : `https://wa.me/?text=${encodeURIComponent(
+                        `Hello Widox Team, I registered my account (${userEmail || ""}) on revasy and would like to configure my business dashboard.`
+                      )}`;
+
+                  return (
+                    <a
+                      href={whatsappHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="press w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      <span>Chat with Widox Team</span>
+                    </a>
+                  );
+                })()}
 
                 <a
                   href={`mailto:widoxstudio@gmail.com?subject=${encodeURIComponent(
-                    "revasy Business Dashboard Setup Request"
+                    "revasy Business Dashboard Setup Request - Widox Studio"
                   )}&body=${encodeURIComponent(
-                    `Hello revasy Team,\n\nI have signed up with the email: ${userEmail || ""}.\nPlease configure the dashboard for my business:\n\nBusiness Name:\nGoogle Maps Link or Address:\n\nThank you!`
+                    `Hello Widox Team,\n\nI have signed up with the email: ${userEmail || ""}.\nPlease configure the dashboard for my business:\n\nBusiness Name:\nGoogle Maps Link or Address:\n\nThank you!`
                   )}`}
                   className="press w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-surface-card hover:bg-surface-strong border border-hairline text-ink rounded-xl text-xs font-semibold transition-colors"
                 >
@@ -346,7 +368,7 @@ export default function DashboardOverviewPage() {
                 <p className="text-xs text-muted">
                   {searchQuery
                     ? "Try searching for a different keyword or clear your filter."
-                    : "Contact the concierge team to configure additional branches."}
+                    : "Contact the Widox team (widoxstudio@gmail.com) to configure additional branches."}
                 </p>
                 {searchQuery && (
                   <button
