@@ -28,6 +28,7 @@ import { GooglePlaceIdFinder } from "./GooglePlaceIdFinder";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { THEME_ACCENTS, AccentColor } from "@/lib/theme";
+import { LogoUploader } from "@/components/ui/LogoUploader";
 
 const CATEGORY_PRESETS: Record<string, string[]> = {
   "Cafe & Bakery": [
@@ -106,6 +107,7 @@ export function OnboardingWizard() {
   const [address, setAddress] = useState("");
   const [googleReviewUrl, setGoogleReviewUrl] = useState("");
   const [placeId, setPlaceId] = useState("");
+  const [logoUrl, setLogoUrl] = useState("");
   const [ownerEmail, setOwnerEmail] = useState("");
   const [accentColor, setAccentColor] = useState<AccentColor>("teal");
   const [customPrompts, setCustomPrompts] = useState<string[]>(
@@ -212,6 +214,7 @@ export function OnboardingWizard() {
         address: address.trim() || undefined,
         googleReviewUrl: googleReviewUrl.trim(),
         placeId: placeId.trim() || undefined,
+        logoUrl: logoUrl.trim() || undefined,
         ownerEmail: ownerEmail.trim().toLowerCase(),
         accentColor,
         customPrompts: customPrompts.filter(Boolean),
@@ -488,6 +491,15 @@ export function OnboardingWizard() {
                   className="w-full px-3.5 py-2 text-sm rounded-xl border border-hairline bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary outline-none resize-none"
                 />
               </div>
+
+              <div>
+                <LogoUploader
+                  value={logoUrl}
+                  onChange={setLogoUrl}
+                  businessName={name || "Business"}
+                  accentColor={activeAccent.primary}
+                />
+              </div>
             </div>
 
             {/* Step 3: Tenant Client Access Assignment (Owner Email) */}
@@ -697,10 +709,18 @@ export function OnboardingWizard() {
               <div className="pt-6 text-center">
                 {/* Brand Logo Avatar */}
                 <div
-                  className="h-16 w-16 mx-auto rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md mb-3"
-                  style={{ backgroundColor: activeAccent.primary }}
+                  className="h-16 w-16 mx-auto rounded-2xl flex items-center justify-center text-white text-2xl font-bold shadow-md mb-3 overflow-hidden border border-hairline"
+                  style={{ backgroundColor: logoUrl ? "#ffffff" : activeAccent.primary }}
                 >
-                  {(name || "R").charAt(0).toUpperCase()}
+                  {logoUrl ? (
+                    <img
+                      src={logoUrl}
+                      alt={name || "Business"}
+                      className="w-full h-full object-contain p-1 rounded-xl"
+                    />
+                  ) : (
+                    (name || "R").charAt(0).toUpperCase()
+                  )}
                 </div>
 
                 <h4 className="font-display font-bold text-ink text-lg leading-snug">

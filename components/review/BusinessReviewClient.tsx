@@ -333,6 +333,15 @@ export function BusinessReviewClient({ business }: { business: Business }) {
           </Link>
 
           <div className="flex items-center gap-1.5 min-w-0 max-w-[210px]">
+            {business.logoUrl ? (
+              <div className="w-5 h-5 rounded-md bg-white border border-hairline overflow-hidden p-0.5 shrink-0 flex items-center justify-center shadow-2xs">
+                <img
+                  src={business.logoUrl}
+                  alt={business.name}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : null}
             <span className="font-display font-semibold text-sm text-ink truncate">
               {business.name}
             </span>
@@ -398,9 +407,9 @@ export function BusinessReviewClient({ business }: { business: Business }) {
           <div className="space-y-5 animate-fadeIn">
             {/* Business Hero Banner */}
             <div className="text-center space-y-2">
-              <div className="w-16 h-16 mx-auto rounded-2xl bg-surface-card border border-hairline flex items-center justify-center shadow-revasy overflow-hidden">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-white border border-hairline flex items-center justify-center shadow-revasy overflow-hidden p-1">
                 {business.logoUrl ? (
-                  <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
+                  <img src={business.logoUrl} alt={business.name} className="w-full h-full object-contain" />
                 ) : (
                   getCategoryIcon(business.category)
                 )}

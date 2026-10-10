@@ -27,6 +27,7 @@ import { THEME_ACCENTS, AccentColor } from "@/lib/theme";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Toast, ToastType } from "@/components/ui/Toast";
+import { LogoUploader } from "@/components/ui/LogoUploader";
 
 interface BusinessManagerProps {
   initialBusiness: Business;
@@ -233,6 +234,22 @@ export function BusinessManager({
           >
             <ArrowLeft className="h-4 w-4" />
           </Link>
+          {business.logoUrl ? (
+            <div className="w-11 h-11 rounded-xl bg-white border border-hairline overflow-hidden p-1 shrink-0 shadow-2xs flex items-center justify-center">
+              <img
+                src={business.logoUrl}
+                alt={business.name}
+                className="w-full h-full object-contain"
+              />
+            </div>
+          ) : (
+            <div
+              className="w-11 h-11 rounded-xl shrink-0 flex items-center justify-center text-white text-lg font-bold shadow-2xs"
+              style={{ backgroundColor: activeAccent.primary }}
+            >
+              {business.name.charAt(0).toUpperCase()}
+            </div>
+          )}
           <div>
             <div className="flex items-center gap-2.5">
               <h1 className="font-display text-2xl font-bold tracking-tight text-ink">
@@ -432,6 +449,15 @@ export function BusinessManager({
                 className="w-full px-3.5 py-2 text-sm rounded-xl border border-hairline bg-slate-50 focus:bg-white focus:ring-1 focus:ring-primary outline-none resize-none"
               />
             </div>
+
+            <div>
+              <LogoUploader
+                value={business.logoUrl || ""}
+                onChange={(val) => setBusiness({ ...business, logoUrl: val })}
+                businessName={business.name}
+                accentColor={activeAccent.primary}
+              />
+            </div>
           </div>
 
           {/* Tenant Client Owner Email */}
@@ -612,10 +638,18 @@ export function BusinessManager({
             {/* Printable Table Tent Container */}
             <div className="printable-stand mx-auto max-w-[240px] bg-white border-2 border-slate-900 rounded-2xl p-5 shadow-lg mb-4">
               <div
-                className="h-9 w-9 mx-auto rounded-lg flex items-center justify-center text-white text-base font-bold shadow-sm mb-2"
-                style={{ backgroundColor: activeAccent.primary }}
+                className="h-10 w-10 mx-auto rounded-lg flex items-center justify-center text-white text-base font-bold shadow-sm mb-2 overflow-hidden border border-slate-200"
+                style={{ backgroundColor: business.logoUrl ? "#ffffff" : activeAccent.primary }}
               >
-                {business.name.charAt(0).toUpperCase()}
+                {business.logoUrl ? (
+                  <img
+                    src={business.logoUrl}
+                    alt={business.name}
+                    className="w-full h-full object-contain p-0.5"
+                  />
+                ) : (
+                  business.name.charAt(0).toUpperCase()
+                )}
               </div>
               <h4 className="font-display font-bold text-ink text-sm leading-tight">
                 {business.name}

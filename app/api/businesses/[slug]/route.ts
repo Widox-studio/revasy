@@ -1,6 +1,6 @@
 
 import { NextResponse } from "next/server";
-import { getBusinessBySlugAsync, saveBusiness, deleteBusinessAsync } from "@/lib/business-store";
+import { getBusinessBySlugAsync, saveBusinessAsync, deleteBusinessAsync } from "@/lib/business-store";
 import { getAdminSession, isAuthorizedForBusiness, isSuperAdminEmail } from "@/lib/auth";
 import { sanitizeText } from "@/lib/validation";
 import { extractPlaceId } from "@/lib/maps-launcher";
@@ -115,7 +115,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
         : existing.customPrompts,
     };
 
-    saveBusiness(updated);
+    await saveBusinessAsync(updated);
 
     return NextResponse.json({ success: true, business: updated });
   } catch (error) {

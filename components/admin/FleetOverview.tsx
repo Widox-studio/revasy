@@ -197,19 +197,34 @@ export function FleetOverview({ initialBusinesses, userAppUrl = "" }: FleetOverv
                   </div>
 
                   {/* Business Identity */}
-                  <h3 className="font-display font-bold text-lg text-ink group-hover:text-primary transition-colors flex items-center gap-2">
-                    <span
-                      className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: accent.primary }}
-                    />
-                    <span className="truncate">{b.name}</span>
-                  </h3>
-
-                  {b.tagline && (
-                    <p className="text-xs text-muted line-clamp-1 mt-0.5">
-                      {b.tagline}
-                    </p>
-                  )}
+                  <div className="flex items-center gap-3">
+                    {b.logoUrl ? (
+                      <div className="w-10 h-10 rounded-xl bg-white border border-hairline overflow-hidden p-1 shrink-0 shadow-2xs flex items-center justify-center">
+                        <img
+                          src={b.logoUrl}
+                          alt={b.name}
+                          className="w-full h-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div
+                        className="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center text-white text-sm font-bold shadow-2xs"
+                        style={{ backgroundColor: accent.primary }}
+                      >
+                        {b.name.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display font-bold text-base text-ink group-hover:text-primary transition-colors truncate">
+                        {b.name}
+                      </h3>
+                      {b.tagline && (
+                        <p className="text-xs text-muted line-clamp-1 mt-0.5">
+                          {b.tagline}
+                        </p>
+                      )}
+                    </div>
+                  </div>
 
                   {/* Metadata */}
                   <div className="mt-4 pt-3 border-t border-hairline space-y-2 text-xs text-muted mb-4">

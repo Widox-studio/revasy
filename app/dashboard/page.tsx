@@ -368,9 +368,9 @@ export default function DashboardOverviewPage() {
                     {/* Header: Logo, Name, Category */}
                     <div className="space-y-3">
                       <div className="flex items-start justify-between gap-3">
-                        <div className="w-12 h-12 rounded-xl bg-surface-card border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
+                        <div className="w-12 h-12 rounded-xl bg-white border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm p-1">
                           {biz.logoUrl ? (
-                            <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-cover" />
+                            <img src={biz.logoUrl} alt={biz.name} className="w-full h-full object-contain" />
                           ) : (
                             getCategoryIcon(biz.category)
                           )}

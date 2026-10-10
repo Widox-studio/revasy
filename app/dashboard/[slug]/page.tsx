@@ -41,6 +41,7 @@ import { UserButton } from "@clerk/nextjs";
 import { Business, AutoReplyLog } from "@/lib/business-store";
 import { generateQrDataUrl } from "@/lib/qr";
 import { getAccentTheme } from "@/lib/theme";
+import { LogoUploader } from "@/components/ui/LogoUploader";
 
 export default function BusinessDetailPage() {
   const params = useParams();
@@ -89,6 +90,7 @@ export default function BusinessDetailPage() {
   const [editName, setEditName] = useState("");
   const [editTagline, setEditTagline] = useState("");
   const [editDescription, setEditDescription] = useState("");
+  const [editLogoUrl, setEditLogoUrl] = useState("");
   const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   // Toast
@@ -120,6 +122,7 @@ export default function BusinessDetailPage() {
         setEditName(biz.name);
         setEditTagline(biz.tagline || "");
         setEditDescription(biz.description || "");
+        setEditLogoUrl(biz.logoUrl || "");
 
         // Initialize Auto-Reply State (only enabled if Google connected AND verified location exists)
         const hasValidLoc = Boolean(biz.googleOAuth?.connected && biz.googleOAuth?.locationName);
@@ -370,6 +373,7 @@ export default function BusinessDetailPage() {
           name: editName.trim(),
           tagline: editTagline.trim(),
           description: editDescription.trim(),
+          logoUrl: editLogoUrl,
         }),
       });
       const data = await res.json();
@@ -495,7 +499,7 @@ export default function BusinessDetailPage() {
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-white border border-hairline flex items-center justify-center overflow-hidden shrink-0 shadow-sm">
               {business.logoUrl ? (
-                <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
+                <img src={business.logoUrl} alt={business.name} className="w-full h-full object-contain p-1" />
               ) : (
                 <Building2 className="w-7 h-7 text-muted" />
               )}
@@ -1224,9 +1228,9 @@ export default function BusinessDetailPage() {
 
                   {/* Brand Logo & Name */}
                   <div className="space-y-1.5 pt-1">
-                    <div className="w-14 h-14 mx-auto rounded-2xl bg-surface-soft border border-hairline flex items-center justify-center overflow-hidden shadow-sm">
+                    <div className="w-14 h-14 mx-auto rounded-2xl bg-white border border-hairline flex items-center justify-center overflow-hidden shadow-sm p-1">
                       {business.logoUrl ? (
-                        <img src={business.logoUrl} alt={business.name} className="w-full h-full object-cover" />
+                        <img src={business.logoUrl} alt={business.name} className="w-full h-full object-contain" />
                       ) : (
                         <Building2 className="w-7 h-7 text-muted" />
                       )}
@@ -1420,6 +1424,12 @@ export default function BusinessDetailPage() {
                 Customer-facing welcome message shown on your smart NFC review stand and feedback portal.
               </p>
             </div>
+
+            <LogoUploader
+              value={editLogoUrl}
+              onChange={setEditLogoUrl}
+              businessName={editName || business.name}
+            />
 
             <Button
               type="submit"
