@@ -108,7 +108,7 @@ export default function BusinessDetailPage() {
       try {
         const res = await fetch(`/api/businesses/${slug}`);
         if (!res.ok) {
-          if (res.status === 403) {
+          if (res.status === 403 || res.status === 404) {
             setIsForbidden(true);
             setIsLoading(false);
             return;
@@ -406,13 +406,13 @@ export default function BusinessDetailPage() {
           </div>
           <div className="space-y-1.5">
             <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-pill bg-red-50 border border-red-200 text-red-700">
-              403 Forbidden
+              Access Revoked or Location Inactive
             </span>
             <h1 className="font-display font-semibold text-xl text-ink">
               Access Restricted
             </h1>
             <p className="text-xs text-muted leading-relaxed">
-              This business dashboard is private and belongs to another merchant account. Your logged-in credentials do not have permission to manage this location.
+              This business is either no longer active or access has been revoked by administration. Your account does not have permission to manage this location.
             </p>
           </div>
           <div className="pt-2 flex flex-col gap-2">

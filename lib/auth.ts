@@ -50,16 +50,8 @@ export function isAuthorizedForBusiness(
   // Super admins can access any business
   if (isSuperAdminEmail(normalizedSession)) return true;
 
-  // Regular business owners can access their own business
+  // Regular business owners can access only their own active assigned business
   if (normalizedSession === normalizedOwner) return true;
-
-  // Whitelisted pilot emails have access to pilot businesses
-  if (
-    WHITELISTED_PILOT_EMAILS.includes(normalizedSession) &&
-    (businessSlug === "cocova" || businessSlug === "basil-leaf" || normalizedOwner === "riteshch.dev@gmail.com" || normalizedOwner === "riteshc852@gmail.com")
-  ) {
-    return true;
-  }
 
   return false;
 }

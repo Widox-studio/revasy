@@ -203,7 +203,7 @@ export async function getAllBusinessesAsync(): Promise<Business[]> {
   if (d1 && typeof d1.prepare === "function") {
     try {
       const res = await d1.prepare("SELECT * FROM businesses ORDER BY created_at DESC;").all();
-      if (res && res.results && res.results.length > 0) {
+      if (res && Array.isArray(res.results)) {
         const d1Businesses = res.results.map(mapRowToBusiness);
         inMemoryBusinesses = d1Businesses;
         return inMemoryBusinesses;
@@ -221,7 +221,7 @@ export async function getAllBusinessesAsync(): Promise<Business[]> {
     });
     if (workerRes.ok) {
       const data = await workerRes.json();
-      if (data && Array.isArray(data.results) && data.results.length > 0) {
+      if (data && Array.isArray(data.results)) {
         const remoteBusinesses = data.results.map(mapRowToBusiness);
         inMemoryBusinesses = remoteBusinesses;
         if (isFsAvailable()) {
@@ -252,6 +252,10 @@ export async function getBusinessBySlugAsync(slug: string): Promise<Business | n
         if (idx >= 0) inMemoryBusinesses[idx] = biz;
         else inMemoryBusinesses.push(biz);
         return biz;
+      } else {
+        // Confirmed absent in D1 database - prune from memory cache and return null
+        inMemoryBusinesses = inMemoryBusinesses.filter((b) => b.slug.toLowerCase() !== normalized && b.id !== normalized);
+        return null;
       }
     } catch (e) {
       console.warn("D1 query error in getBusinessBySlugAsync:", e);
@@ -531,14 +535,15 @@ export async function clearBusinessAutoReplyLogs(
 }
 
 export async function deleteBusinessAsync(slugOrId: string): Promise<boolean> {
-  const all = getAllBusinesses();
-  const filtered = all.filter((b) => b.id !== slugOrId && b.slug.toLowerCase() !== slugOrId.toLowerCase());
-  inMemoryBusinesses = filtered;
+  const normalized = slugOrId.toLowerCase().trim();
+  inMemoryBusinesses = inMemoryBusinesses.filter(
+    (b) => b.id !== slugOrId && b.slug.toLowerCase() !== normalized
+  );
 
   if (isFsAvailable()) {
     try {
       ensureDataFile();
-      fs.writeFileSync(DATA_FILE, JSON.stringify(filtered, null, 2), "utf-8");
+      fs.writeFileSync(DATA_FILE, JSON.stringify(inMemoryBusinesses, null, 2), "utf-8");
     } catch (err) {
       console.warn("Failed deleting business from file:", err);
     }
@@ -547,7 +552,8 @@ export async function deleteBusinessAsync(slugOrId: string): Promise<boolean> {
   const d1 = getD1Binding();
   if (d1 && typeof d1.prepare === "function") {
     try {
-      await d1.prepare("DELETE FROM businesses WHERE lower(slug) = ? OR id = ?;").bind(slugOrId.toLowerCase(), slugOrId).run();
+      await d1.prepare("DELETE FROM businesses WHERE lower(slug) = ? OR id = ?;").bind(normalized, slugOrId).run();
+      await d1.prepare("DELETE FROM review_logs WHERE lower(business_id) = ? OR business_id = ?;").bind(normalized, slugOrId).run().catch(() => {});
     } catch (e) {
       console.warn("D1 delete error:", e);
     }
@@ -557,7 +563,7 @@ export async function deleteBusinessAsync(slugOrId: string): Promise<boolean> {
   const cfApiToken = process.env.CLOUDFLARE_API_TOKEN;
   if (cfAccountId && cfApiToken) {
     try {
-      const sql = `DELETE FROM businesses WHERE lower(slug) = '${slugOrId.toLowerCase().replace(/'/g, "''")}' OR id = '${slugOrId.replace(/'/g, "''")}';`;
+      const sql = `DELETE FROM businesses WHERE lower(slug) = '${normalized.replace(/'/g, "''")}' OR id = '${slugOrId.replace(/'/g, "''")}'; DELETE FROM review_logs WHERE lower(business_id) = '${normalized.replace(/'/g, "''")}';`;
       await fetch(`https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/d1/database/52df4dc3-0470-4abb-a41d-c1d9c534defc/query`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${cfApiToken}`, "Content-Type": "application/json" },
